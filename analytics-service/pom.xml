@@ -89,22 +89,25 @@
 	</dependencies>
 
 	<build>
-    <extensions>
-        <!-- Ensures compatibility with your OS when running protoc -->
-        <extension>
-            <groupId>kr.motd.maven</groupId>
-            <artifactId>os-maven-plugin</artifactId>
-            <version>1.7.0</version>
-        </extension>
-    </extensions>
+		<extensions>
+			<!-- Ensures compatibility with your OS when running protoc -->
+			<extension>
+				<groupId>kr.motd.maven</groupId>
+				<artifactId>os-maven-plugin</artifactId>
+				<version>1.7.0</version>
+			</extension>
+		</extensions>
 
     <plugins>
-
         <!-- Spring Boot plugin -->
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-        </plugin>
+
+		<plugin>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-maven-plugin</artifactId>
+			<configuration>
+				<mainClass>com.pm.analytics.AnalyticsServiceApplication</mainClass>
+			</configuration>
+		</plugin>
 
         <!-- Protobuf code generation plugin -->
         <plugin>

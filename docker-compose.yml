@@ -16,12 +16,25 @@ services:
       - internal-net
   # spring.datasource.url=jdbc:postgresql://springboot-postgres:5432/patient_management
 
+  db_auth_servuce: 
+    image: postgres:latest
+    shm_size: 128mb
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: auth
+      POSTGRES_USER: user
+    ports:
+      - 5002:5432
+    networks:
+      - internal-net
+
   billing-service:
     build:
       context: ./billing-service
       dockerfile: Dockerfile
     container_name: billing-service
-    image: chamudithaadithya/patient_management_system_billing:latest
+    image: chamudithaadithya/patient_management_system:billing
     ports:
       - '4001:4001' # HTTP port
       - '9001:9001' # gRPC port
@@ -34,7 +47,7 @@ services:
       context: ./patient-service
       dockerfile: Dockerfile
     container_name: patient-service
-    image: chamudithaadithya/patient_management_system_patient:latest
+    image: chamudithaadithya/patient_management_system:patient
     # ports:
     # - 4000:4000 NO longer accepts since api-getwat handle it
     environment:
@@ -58,7 +71,7 @@ services:
       context: ./analytics-service
       dockerfile: Dockerfile
     container_name: analytics-service
-    image: chamudithaadithya/patient_management_system_analytics:latest
+    image: chamudithaadithya/patient_management_system:analytics
     ports:
       - 4002:4002
     depends_on:
@@ -75,7 +88,7 @@ services:
       context: ./api-getway
       dockerfile: Dockerfile
     container_name: api-getway
-    image: chamudithaadithya/patient_management_system_api_getway:latest
+    image: chamudithaadithya/patient_management_system:api_getway
     ports:
       - 4004:4004
     networks:
