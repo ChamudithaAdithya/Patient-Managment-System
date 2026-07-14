@@ -7,7 +7,7 @@ set -e
 # ──────────────────────────────────────────────────────────
 
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-REGION="us-east-1"
+REGION="eu-north-1"
 KEY_NAME="pm-system-key"
 SG_NAME="pm-system-sg"
 
