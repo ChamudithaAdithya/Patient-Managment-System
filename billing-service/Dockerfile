@@ -10,7 +10,7 @@ COPY src ./src
 
 RUN mvn clean package -DSkipTests
 
-FROM openjdk:21-jdk AS runner 
+FROM eclipse-temurin:21-jre AS runner 
 
 WORKDIR /app
 
@@ -36,7 +36,7 @@ ENTRYPOINT ["java","-jar","app.jar"]
 # Compile and package the Spring Boot application (produces a JAR file)
 # RUN mvn clean package
 # --- Stage 2: Create a lightweight runtime container ---
-# FROM openjdk:21-jdk AS runner
+# FROM eclipse-temurin:21-jre AS runner
 # Set working directory for the runtime stage
 # WORKDIR /app
 # Copy the JAR file from the builder stage into the runtime container

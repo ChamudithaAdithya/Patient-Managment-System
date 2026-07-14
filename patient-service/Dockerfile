@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # --- Stage 2: Create a lightweight runtime container ---
-FROM openjdk:21-jdk AS runner
+FROM eclipse-temurin:21-jre AS runner
 
 # Set working directory for the runtime stage
 WORKDIR /app

@@ -17,6 +17,8 @@ public class PatientRequestDTO {
     @NotBlank(groups = CreatePatientValidationGroup.class,message = "Registered Date is required")
     private String registeredDate;
 
+    private String phone;
+
     public String getName() {
         return name;
     }
@@ -56,4 +58,7 @@ public class PatientRequestDTO {
     public void setRegisteredDate(String registeredDate) {
         this.registeredDate = registeredDate;
     }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }

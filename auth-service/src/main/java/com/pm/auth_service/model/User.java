@@ -19,6 +19,8 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    public User() {}
+
     public User(UUID id, String email, RoleEnum role, String password) {
         this.id = id;
         this.email = email;
