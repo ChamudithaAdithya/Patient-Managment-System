@@ -16,3 +16,11 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+
+spring.kafka.bootstrap-servers: patient-kafka:9092
+
+spring.kafka.producer.key-serializer: org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+
+secret:
+  key: dqYCMmwi5RRi2q3q0b32EZ3mR37RgQEJFfi3egXDQNI=

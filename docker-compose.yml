@@ -113,7 +113,7 @@ services:
     depends_on:
       - db_auth
     networks:
-      - int8ernal-net
+      - internal-net
 
   db_appointment:
     image: mysql:8.0
@@ -140,6 +140,43 @@ services:
       - db_appointment
     networks:
       - internal-net
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
+
+  imaging-db:
+    image: postgres:latest
+    container_name: imaging-db
+    environment:
+      POSTGRES_DB: medical_images
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5014:5432"
+    networks:
+      - internal-net
+
+  imaging-service:
+    build:
+      context: ./imaging-service
+      dockerfile: Dockerfile
+    container_name: imaging-service
+    restart: unless-stopped
+    image: chamudithaadithya/patient_management_system:imaging
+    ports:
+      - "4007:4007"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://imaging-db:5432/medical_images
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - imaging-db
+    networks:
+      - internal-net
+    volumes:
+      - medical-images:/app/images
+
+volumes:
+  medical-images:
 
 networks:
   internal-net:

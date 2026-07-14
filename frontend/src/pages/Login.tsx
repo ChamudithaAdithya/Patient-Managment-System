@@ -9,6 +9,7 @@ export default function Login() {
   const { login, register } = useAuth()
   const navigate = useNavigate()
   const [isRegister, setIsRegister] = useState(false)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<'PATIENT' | 'DOCTOR'>('PATIENT')
@@ -21,7 +22,7 @@ export default function Login() {
     setLoading(true)
     try {
       if (isRegister) {
-        await register({ email, password, role })
+        await register({ name, email, password, role })
       } else {
         await login({ email, password })
       }
@@ -46,6 +47,7 @@ export default function Login() {
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegister && <Input label="Full Name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />}
           <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           {isRegister && (

@@ -1,21 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAll, cancel } from '../../api/appointments'
+import { getAll as getDoctors } from '../../api/doctors'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { toast } from '../../components/ui/Toast'
 import type { Appointment } from '../../types/appointment'
+import type { Doctor } from '../../types/doctor'
 
 export default function AppointmentList() {
   const navigate = useNavigate()
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [doctorMap, setDoctorMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   const load = () => {
     setLoading(true)
-    getAll()
-      .then(setAppointments)
+    Promise.all([getAll(), getDoctors()])
+      .then(([a, d]) => {
+        setAppointments(a)
+        const map: Record<string, string> = {}
+        d.forEach((doc: Doctor) => { map[doc.id] = doc.name })
+        setDoctorMap(map)
+      })
       .finally(() => setLoading(false))
   }
 
@@ -54,8 +62,8 @@ export default function AppointmentList() {
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Patient ID</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Doctor ID</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Patient</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Doctor</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Date & Time</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Reason</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
@@ -66,7 +74,7 @@ export default function AppointmentList() {
                 {appointments.map((a) => (
                   <tr key={a.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono text-xs">{a.patientId.slice(0, 8)}...</td>
-                    <td className="px-4 py-3 font-mono text-xs">{a.doctorId.slice(0, 8)}...</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{doctorMap[a.doctorId] || a.doctorId.slice(0, 8)}</td>
                     <td className="px-4 py-3 text-gray-900">
                       {new Date(a.appointmentDateTime).toLocaleDateString()}{' '}
                       {new Date(a.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

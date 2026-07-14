@@ -4,6 +4,13 @@ server:
 spring:
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origin-patterns: "http://localhost:*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
       routes:
         ### REST CLIENT -> http://localhost:4004/api/patients
         ### API GATEWAY -> http://patient-service:4000/patients
@@ -24,12 +31,35 @@ spring:
           filters:
             - RewritePath=/api-docs/patients, v3/api-docs
 
+        ### REST-CLIENT -> http://localhost:4004/api/doctors
+        ### API-GATEWAY -> http://appointment-service:4006/doctors
+        - id: doctor-service-route
+          uri: http://appointment-service:4006
+          predicates:
+            - Path=/api/doctors/**
+          filters:
+            - StripPrefix=1
+
         ### REST-CLIENT -> http://localhost:4004/api/appointments
         ### API-GATEWAY -> http://appointment-service:4006/appointments
         - id: appointment-service-route
           uri: http://appointment-service:4006
           predicates:
             - Path=/api/appointments/**
+          filters:
+            - StripPrefix=1
+
+        - id: consultation-service-route
+          uri: http://appointment-service:4006
+          predicates:
+            - Path=/api/consultations/**
+          filters:
+            - StripPrefix=1
+
+        - id: imaging-service-route
+          uri: http://imaging-service:4007
+          predicates:
+            - Path=/api/images/**
           filters:
             - StripPrefix=1
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAll, remove } from '../../api/patients'
+import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Table, type Column } from '../../components/ui/Table'
@@ -39,12 +40,17 @@ export default function PatientList() {
     { key: 'phone', header: 'Phone' },
     { key: 'address', header: 'Address' },
     {
+      key: 'status',
+      header: 'Status',
+      render: (p) => <Badge variant={p.status === 'INACTIVE' ? 'CANCELLED' : 'SCHEDULED'}>{p.status || 'ACTIVE'}</Badge>,
+    },
+    {
       key: 'actions',
       header: '',
       render: (p) => (
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <Button variant="ghost" onClick={() => navigate(`/patients/${p.id}`)}>Edit</Button>
-          <Button variant="danger" onClick={(e) => handleDelete(p.id, e)}>Delete</Button>
+          <Button variant="danger" onClick={(e) => handleDelete(p.id, e)}>{p.status === 'INACTIVE' ? 'Activate' : 'Delete'}</Button>
         </div>
       ),
     },

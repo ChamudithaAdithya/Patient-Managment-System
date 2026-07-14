@@ -6,6 +6,7 @@ export interface Patient {
   dateOfBirth: string
   registeredDate: string
   phone?: string
+  status?: string
 }
 
 export interface PatientRequest {

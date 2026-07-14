@@ -16,6 +16,7 @@ public class PatientMapper {
         patientResponseDTO.setDateOfBirth(patient.getDateOfBirth().toString());
         patientResponseDTO.setRegisteredDate(patient.getRegisteredDate().toString());
         patientResponseDTO.setPhone(patient.getPhone());
+        patientResponseDTO.setStatus(patient.getStatus() != null ? patient.getStatus().name() : "ACTIVE");
         return patientResponseDTO;
     }
     public static Patient toModel(PatientRequestDTO patientRequestDTO){
@@ -26,6 +27,7 @@ public class PatientMapper {
         patient.setDateOfBirth(LocalDate.parse(patientRequestDTO.getDateOfBirth()));
         patient.setRegisteredDate(LocalDate.parse(patientRequestDTO.getRegisteredDate()));
         patient.setPhone(patientRequestDTO.getPhone());
+        patient.setStatus(com.pm.patientService.model.PatientStatus.ACTIVE);
         return patient;
     }
 

@@ -11,7 +11,12 @@ import PatientDetail from './pages/patients/PatientDetail'
 import AppointmentList from './pages/appointments/AppointmentList'
 import AppointmentForm from './pages/appointments/AppointmentForm'
 import AppointmentDetail from './pages/appointments/AppointmentDetail'
+import DoctorList from './pages/doctors/DoctorList'
+import DoctorForm from './pages/doctors/DoctorForm'
+import DoctorDetail from './pages/doctors/DoctorDetail'
 import DoctorSchedule from './pages/doctors/DoctorSchedule'
+import AdminUsers from './pages/admin/AdminUsers'
+import StaffList from './pages/admin/StaffList'
 
 export default function App() {
   return (
@@ -30,7 +35,29 @@ export default function App() {
               <Route path="/appointments" element={<AppointmentList />} />
               <Route path="/appointments/new" element={<AppointmentForm />} />
               <Route path="/appointments/:id" element={<AppointmentDetail />} />
-              <Route path="/doctors" element={<DoctorSchedule />} />
+              <Route path="/doctors" element={<DoctorList />} />
+              <Route path="/doctors/new" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN']} />}>
+                <Route element={<AppLayout />}>
+                  <Route index element={<DoctorForm />} />
+                </Route>
+              </Route>
+              <Route path="/doctors/:id" element={<DoctorDetail />} />
+              <Route path="/doctors/:id/edit" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN']} />}>
+                <Route element={<AppLayout />}>
+                  <Route index element={<DoctorForm />} />
+                </Route>
+              </Route>
+              <Route path="/doctors/schedule" element={<DoctorSchedule />} />
+              <Route path="/admin/users" element={<ProtectedRoute roles={['SUPER_ADMIN']} />}>
+                <Route element={<AppLayout />}>
+                  <Route index element={<AdminUsers />} />
+                </Route>
+              </Route>
+              <Route path="/admin/staff" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN']} />}>
+                <Route element={<AppLayout />}>
+                  <Route index element={<StaffList />} />
+                </Route>
+              </Route>
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

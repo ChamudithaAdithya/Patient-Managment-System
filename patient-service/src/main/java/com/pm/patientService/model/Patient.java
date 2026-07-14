@@ -30,6 +30,12 @@ public class Patient {
 
     private String phone;
 
+    @Enumerated(EnumType.STRING)
+    private PatientStatus status = PatientStatus.ACTIVE;
+
+    public PatientStatus getStatus() { return status; }
+    public void setStatus(PatientStatus status) { this.status = status; }
+
     public UUID getId() {
         return id;
     }

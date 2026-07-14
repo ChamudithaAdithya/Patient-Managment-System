@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Card } from '../../components/ui/Card'
 import { toast } from '../../components/ui/Toast'
+import { parseError } from '../../lib/errorHandler'
 import type { PatientRequest } from '../../types/patient'
 
 export default function PatientForm() {
@@ -13,6 +14,7 @@ export default function PatientForm() {
   const isEdit = !!id
 
   const [form, setForm] = useState<PatientRequest>({ name: '', email: '', address: '', dateOfBirth: '', registeredDate: '', phone: '' })
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(isEdit)
 
@@ -24,9 +26,15 @@ export default function PatientForm() {
     }
   }, [id])
 
+  const updateField = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }))
+    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setErrors({})
     try {
       if (isEdit) {
         await update(id!, form)
@@ -36,8 +44,10 @@ export default function PatientForm() {
         toast({ message: 'Patient created', type: 'success' })
       }
       navigate('/patients')
-    } catch {
-      toast({ message: 'Failed to save patient', type: 'error' })
+    } catch (err) {
+      const parsed = parseError(err)
+      setErrors(parsed.fieldErrors)
+      toast({ message: parsed.message, type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -56,12 +66,12 @@ export default function PatientForm() {
       <h1 className="text-2xl font-bold text-gray-900">{isEdit ? 'Edit Patient' : 'New Patient'}</h1>
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-          <Input label="Phone" value={form.phone || ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <Input label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
-          <Input label="Date of Birth" type="date" value={form.dateOfBirth} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} required />
-          <Input label="Registered Date" type="date" value={form.registeredDate} onChange={(e) => setForm({ ...form, registeredDate: e.target.value })} required />
+          <Input label="Full Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} error={errors.name} required />
+          <Input label="Email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} error={errors.email} required />
+          <Input label="Phone" value={form.phone || ''} onChange={(e) => updateField('phone', e.target.value)} error={errors.phone} />
+          <Input label="Address" value={form.address} onChange={(e) => updateField('address', e.target.value)} error={errors.address} required />
+          <Input label="Date of Birth" type="date" value={form.dateOfBirth} onChange={(e) => updateField('dateOfBirth', e.target.value)} error={errors.dateOfBirth} required />
+          <Input label="Registered Date" type="date" value={form.registeredDate} onChange={(e) => updateField('registeredDate', e.target.value)} error={errors.registeredDate} required />
           <div className="flex gap-3">
             <Button type="submit" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
             <Button variant="secondary" type="button" onClick={() => navigate('/patients')}>Cancel</Button>

@@ -10,3 +10,10 @@ export const cancel = (id: string) => api.put<Appointment>(`/appointments/${id}/
 export const complete = (id: string) => api.put<Appointment>(`/appointments/${id}/complete`).then((r) => r.data)
 export const getAvailableSlots = (doctorId: string, date: string) =>
   api.get<string[]>(`/appointments/doctor/${doctorId}/available`, { params: { date } }).then((r) => r.data)
+
+export const createConsultation = (data: import('../types/consultation').ConsultationRequest) =>
+  api.post<import('../types/consultation').Consultation>('/consultations', data).then((r) => r.data)
+export const getConsultationByAppointment = (appointmentId: string) =>
+  api.get<import('../types/consultation').Consultation>(`/consultations/appointment/${appointmentId}`).then((r) => r.data)
+export const getPatientConsultations = (patientId: string) =>
+  api.get<import('../types/consultation').Consultation[]>(`/consultations/patient/${patientId}`).then((r) => r.data)
