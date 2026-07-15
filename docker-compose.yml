@@ -130,9 +130,9 @@ services:
     ports:
       - "4007:4007"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
-      SPRING_DATASOURCE_USERNAME: pm_admin
-      SPRING_DATASOURCE_PASSWORD: PMSystem2026!
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
+      - SPRING_DATASOURCE_USERNAME=pm_admin
+      - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
     depends_on:
       - patient-kafka
