@@ -116,7 +116,11 @@ jobs:
           cache-dependency-path: ./frontend/package-lock.json
 
       - run: npm ci
-      - run: npm run build
+      - name: Build frontend (with production API URLs)
+        run: |
+          echo "VITE_API_GATEWAY=http://${{ secrets.EC2_HOST }}:4004/api" >> .env.production
+          echo "VITE_AUTH_SERVICE=http://${{ secrets.EC2_HOST }}:4005" >> .env.production
+          npm run build
 
       - uses: actions/upload-artifact@v4
         with:

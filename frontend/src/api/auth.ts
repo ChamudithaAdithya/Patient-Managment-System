@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { LoginRequest, LoginResponse, RegisterRequest } from '../types/auth'
 
-const BASE = 'http://localhost:4005'
+const BASE = import.meta.env.VITE_AUTH_SERVICE || 'http://localhost:4005'
 
 export const login = (data: LoginRequest) =>
   axios.post<LoginResponse>(`${BASE}/login`, data).then((r) => r.data)
