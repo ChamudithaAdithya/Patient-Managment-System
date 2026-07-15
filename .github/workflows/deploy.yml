@@ -148,11 +148,13 @@ jobs:
       - name: Sync to S3
         run: aws s3 sync ./dist s3://${{ env.FRONTEND_BUCKET }} --delete
 
-      - name: Invalidate CloudFront
+      - name: Invalidate CloudFront (skip if no distribution)
         run: |
-          CF_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[?DomainName=='${{ env.FRONTEND_BUCKET }}.s3.amazonaws.com']].Id" --output text)
-          if [ -n "$CF_ID" ]; then
+          CF_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins.Items[?DomainName=='${{ env.FRONTEND_BUCKET }}.s3.amazonaws.com']].Id" --output text 2>/dev/null || true)
+          if [ -n "$CF_ID" ] && [ "$CF_ID" != "None" ]; then
             aws cloudfront create-invalidation --distribution-id $CF_ID --paths "/*"
+          else
+            echo "No CloudFront distribution found — skipping invalidation"
           fi
 
   # ──────────────────────────────────────────────
