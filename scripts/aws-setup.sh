@@ -48,15 +48,15 @@ PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query Reser
 echo "EC2 running at: $PUBLIC_IP"
 
 echo "=== 4. Create S3 bucket for frontend ==="
-aws s3 mb s3://pm-frontend-${ACCOUNT_ID} --region $REGION
-aws s3 website s3://pm-frontend-${ACCOUNT_ID} --index-document index.html --error-document index.html
-aws s3api put-bucket-policy --bucket pm-frontend-${ACCOUNT_ID} --policy '{
+aws s3 mb s3://pm-frontend-2026 --region $REGION
+aws s3 website s3://pm-frontend-2026 --index-document index.html --error-document index.html
+aws s3api put-bucket-policy --bucket pm-frontend-2026 --policy '{
   "Version":"2012-10-17",
   "Statement":[{
     "Effect":"Allow",
     "Principal":"*",
     "Action":"s3:GetObject",
-    "Resource":"arn:aws:s3:::pm-frontend-'${ACCOUNT_ID}'/*"
+    "Resource":"arn:aws:s3:::pm-frontend-2026/*"
   }]
 }'
 
