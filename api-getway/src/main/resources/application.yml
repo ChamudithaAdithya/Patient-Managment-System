@@ -7,7 +7,7 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origin-patterns: "http://localhost:*,http://*.s3-website.*.amazonaws.com,http://*.*.compute.amazonaws.com"
+            allowed-origin-patterns: "*"
             allowed-methods: "*"
             allowed-headers: "*"
             allow-credentials: true
