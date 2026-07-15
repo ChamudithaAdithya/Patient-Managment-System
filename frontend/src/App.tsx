@@ -37,26 +37,18 @@ export default function App() {
               <Route path="/appointments/:id" element={<AppointmentDetail />} />
               <Route path="/doctors" element={<DoctorList />} />
               <Route path="/doctors/new" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN']} />}>
-                <Route element={<AppLayout />}>
                   <Route index element={<DoctorForm />} />
-                </Route>
               </Route>
               <Route path="/doctors/:id" element={<DoctorDetail />} />
               <Route path="/doctors/:id/edit" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN']} />}>
-                <Route element={<AppLayout />}>
                   <Route index element={<DoctorForm />} />
-                </Route>
               </Route>
               <Route path="/doctors/schedule" element={<DoctorSchedule />} />
               <Route path="/admin/users" element={<ProtectedRoute roles={['SUPER_ADMIN']} />}>
-                <Route element={<AppLayout />}>
                   <Route index element={<AdminUsers />} />
-                </Route>
               </Route>
               <Route path="/admin/staff" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN']} />}>
-                <Route element={<AppLayout />}>
                   <Route index element={<StaffList />} />
-                </Route>
               </Route>
             </Route>
           </Route>
