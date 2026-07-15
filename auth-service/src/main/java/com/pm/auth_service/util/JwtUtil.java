@@ -23,6 +23,18 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(email)
                 .claim("role",role.toString())
+                .claim("name", "")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis()+1000*60*60*10)) // 10 Hours
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String generateToken(String email, RoleEnum role, String name){
+        return Jwts.builder()
+                .subject(email)
+                .claim("role",role.toString())
+                .claim("name", name != null ? name : "")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis()+1000*60*60*10)) // 10 Hours
                 .signWith(secretKey)

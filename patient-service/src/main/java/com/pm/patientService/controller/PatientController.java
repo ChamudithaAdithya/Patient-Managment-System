@@ -34,6 +34,12 @@ public class PatientController {
         return ResponseEntity.status(HttpStatus.OK).body(patientService.getAllPatients());
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get Patient by ID")
+    public ResponseEntity<PatientResponseDTO> getPatientById(@PathVariable UUID id) {
+        return ResponseEntity.ok(patientService.getPatientById(id));
+    }
+
     @PostMapping
     @Operation(summary = "Create Patient")
     public ResponseEntity<PatientResponseDTO> postMethodName(@Validated({ Default.class,
@@ -48,10 +54,9 @@ public class PatientController {
         return ResponseEntity.ok().body(patientService.updatePatient(id, patientRequestDTO));
     }
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete Patient by id")
-    public ResponseEntity<Void> deletePatientById(@PathVariable UUID id){
-        patientService.deletePatientById(id);
-        return ResponseEntity.noContent().build();
+    @Operation(summary = "Deactivate Patient by id (soft-delete)")
+    public ResponseEntity<PatientResponseDTO> deletePatientById(@PathVariable UUID id) {
+        return ResponseEntity.ok(patientService.deletePatientById(id));
     }
 
 }

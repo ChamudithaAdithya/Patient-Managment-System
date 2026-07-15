@@ -10,7 +10,8 @@ import com.pm.patientService.dto.PatientResponseDTO;
 @Service
 public interface PatientService {
     public List<PatientResponseDTO> getAllPatients();
+    public PatientResponseDTO getPatientById(UUID id);
     public PatientResponseDTO createPatient(PatientRequestDTO patient);
     public PatientResponseDTO updatePatient(UUID id,PatientRequestDTO patientRequestDTO);
-    public void deletePatientById(UUID id);
+    public PatientResponseDTO deletePatientById(UUID id);
 }

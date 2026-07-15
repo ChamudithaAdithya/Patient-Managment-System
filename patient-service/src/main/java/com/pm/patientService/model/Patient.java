@@ -28,6 +28,14 @@ public class Patient {
     @NotNull
     private LocalDate registeredDate;
 
+    private String phone;
+
+    @Enumerated(EnumType.STRING)
+    private PatientStatus status = PatientStatus.ACTIVE;
+
+    public PatientStatus getStatus() { return status; }
+    public void setStatus(PatientStatus status) { this.status = status; }
+
     public UUID getId() {
         return id;
     }
@@ -75,4 +83,7 @@ public class Patient {
     public void setRegisteredDate(LocalDate registeredDate) {
         this.registeredDate = registeredDate;
     }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }

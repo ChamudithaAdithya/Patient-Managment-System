@@ -4,9 +4,12 @@ public class PatientResponseDTO {
     private String id;
     private String name;
     private String email;
-
     private String address;
     private String dateOfBirth;
+    private String registeredDate;
+    private String phone;
+    private String status;
+
     public String getId() {
         return id;
     }
@@ -46,4 +49,13 @@ public class PatientResponseDTO {
     public void setDateOfBirth(String dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
+
+    public String getRegisteredDate() { return registeredDate; }
+    public void setRegisteredDate(String registeredDate) { this.registeredDate = registeredDate; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

@@ -40,6 +40,13 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    public PatientResponseDTO getPatientById(UUID id) {
+        Patient patient = patientRepository.findById(id).orElseThrow(
+                () -> new PatientWithTheIdDoesNotExistsException("A Patient with the id '" + id + "' Does not exists"));
+        return PatientMapper.toDTO(patient);
+    }
+
+    @Override
     public PatientResponseDTO createPatient(PatientRequestDTO patient) {
         if (patientRepository.alreadyExists(patient.getEmail()) != null) {
             throw new EmailAlreadyExistsException("A patient with the email already exists " + patient.getEmail());
@@ -73,9 +80,11 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public void deletePatientById(UUID id) {
+    public PatientResponseDTO deletePatientById(UUID id) {
         Patient patient = patientRepository.findById(id).orElseThrow(
                 () -> new PatientWithTheIdDoesNotExistsException("A Patient with the id '" + id + "' Does not exists"));
-        patientRepository.deleteById(id);
+        patient.setStatus(com.pm.patientService.model.PatientStatus.INACTIVE);
+        Patient saved = patientRepository.save(patient);
+        return PatientMapper.toDTO(saved);
     }
 }

@@ -30,6 +30,16 @@
       "projectName": "patient-service",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-ApiGetwayApplication<api-getway>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.pm.api_getway.ApiGetwayApplication",
+      "projectName": "api-getway",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
     }
   ]
 }

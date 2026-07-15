@@ -6,7 +6,7 @@ services:
     container_name: auth-service
     image: chamudithaadithya/patient_management_system:auth_service
     ports:
-      - 5004:5342
+      - 4005:4005
     networks:
       - internal-net
 

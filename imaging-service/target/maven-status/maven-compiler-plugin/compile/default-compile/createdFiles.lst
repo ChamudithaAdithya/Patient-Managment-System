@@ -1,0 +1,11 @@
+com\pm\imaging_service\repository\MedicalImageRepository.class
+com\pm\imaging_service\dto\ImageRequestDTO.class
+com\pm\imaging_service\exception\ErrorResponseDTO.class
+com\pm\imaging_service\service\ImageService.class
+com\pm\imaging_service\dto\ImageResponseDTO.class
+com\pm\imaging_service\config\JwtAuthFilter.class
+com\pm\imaging_service\controller\ImageController.class
+com\pm\imaging_service\model\MedicalImage.class
+com\pm\imaging_service\ImagingServiceApplication.class
+com\pm\imaging_service\config\SecurityConfig.class
+com\pm\imaging_service\model\ImageType.class
