@@ -7,7 +7,7 @@ on:
 env:
   DOCKER_HUB_REPO: chamudithaadithya/patient_management_system
   AWS_REGION: ap-southeast-1
-  FRONTEND_BUCKET: pm-frontend-2026
+  FRONTEND_BUCKET: hospital-frontend-dev-2026
 
 jobs:
   # ──────────────────────────────────────────────

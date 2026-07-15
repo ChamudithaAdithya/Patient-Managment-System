@@ -21,36 +21,6 @@ services:
     networks:
       - internal-net
 
-
-  db:
-    image: postgres:latest
-    restart: always
-    shm_size: 128mb
-    container_name: springboot-postgres # Host Address
-    environment:
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_USER: myuser
-      POSTGRES_DB: patient_management # Database Name
-    ports:
-      - 5000:5432
-    networks:
-      - internal-net
-  # spring.datasource.url=jdbc:postgresql://springboot-postgres:5432/patient_management
-
-  db_auth: 
-    image: postgres:latest
-    shm_size: 128mb
-    restart: always
-    container_name: patient-db-auth
-    environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: patient_management
-      POSTGRES_USER: user
-    ports:
-      - 5002:5432
-    networks:
-      - internal-net
-
   billing-service:
     build:
       context: ./billing-service
@@ -59,12 +29,11 @@ services:
     restart: unless-stopped
     image: chamudithaadithya/patient_management_system:billing
     ports:
-      - '4001:4001' # HTTP port
-      - '9001:9001' # gRPC port
+      - '4001:4001'
+      - '9001:9001'
     networks:
       - internal-net
-    
-
+      
   patient-service:
     build:
       context: ./patient-service
@@ -72,20 +41,14 @@ services:
     container_name: patient-service
     restart: unless-stopped
     image: chamudithaadithya/patient_management_system:patient
-    # ports:
-    # - 4000:4000 NO longer accepts since api-getwat handle it
     environment:
-      # Use billing-service as hostname, not localhost
       - BILLING_SERVICE_ADDRESS_LOCALHOST=billing-service
       - BILLING_SERVICE_GRPC_PORT=9001
-      # PostgreSQL connection (note: use service name springboot-postgres as host)
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://springboot-postgres:5432/patient_management
-      - SPRING_DATASOURCE_USERNAME=myuser
-      - SPRING_DATASOURCE_PASSWORD=mypassword
-      # Kafka
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
+      - SPRING_DATASOURCE_USERNAME=pm_admin
+      - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
     depends_on:
-      - db
       - billing-service
     networks:
       - internal-net
@@ -100,7 +63,6 @@ services:
     ports:
       - 4002:4002
     depends_on:
-      - db
       - billing-service
       - patient-service
     networks:
@@ -130,23 +92,12 @@ services:
     ports:
       - 4005:4005
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_auth:5432/patient_management
-      - SPRING_DATASOURCE_USERNAME=user
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
+      - SPRING_DATASOURCE_USERNAME=pm_admin
+      - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
     depends_on:
-      - db_auth
-    networks:
-      - internal-net
-
-  db_appointment:
-    image: mysql:8.0
-    container_name: appointment-db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: hospital_db
-    ports:
-      - 5003:3306
+      - patient-kafka
     networks:
       - internal-net
 
@@ -160,23 +111,14 @@ services:
     ports:
       - 4006:4006
     depends_on:
-      - db_appointment
+      - patient-kafka
     networks:
       - internal-net
     environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
+      - SPRING_DATASOURCE_USERNAME=pm_admin
+      - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
-
-  imaging-db:
-    image: postgres:latest
-    container_name: imaging-db
-    environment:
-      POSTGRES_DB: medical_images
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-    ports:
-      - "5014:5432"
-    networks:
-      - internal-net
 
   imaging-service:
     build:
@@ -188,11 +130,12 @@ services:
     ports:
       - "4007:4007"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://imaging-db:5432/medical_images
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
+      SPRING_DATASOURCE_USERNAME: pm_admin
+      SPRING_DATASOURCE_PASSWORD: PMSystem2026!
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
     depends_on:
-      - imaging-db
+      - patient-kafka
     networks:
       - internal-net
     volumes:
