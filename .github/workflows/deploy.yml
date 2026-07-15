@@ -8,7 +8,7 @@ env:
   DOCKER_HUB_REPO: chamudithaadithya/patient_management_system
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USER: ec2-user
-  AWS_REGION: eu-north-1
+  AWS_REGION: ap-southeast-1
   FRONTEND_BUCKET: hospital-frontend-nishan-dev
 
 jobs:
