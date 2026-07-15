@@ -51,6 +51,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOriginPattern("http://localhost:*");
+        config.addAllowedOriginPattern("http://*.s3-website.*.amazonaws.com");
+        config.addAllowedOriginPattern("http://*.*.compute.amazonaws.com");
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
         config.setAllowCredentials(true);
