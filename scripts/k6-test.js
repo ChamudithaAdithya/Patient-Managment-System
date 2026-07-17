@@ -1,10 +1,10 @@
 import http from 'k6/http';
-import { check, sleep } from 'k6';
+import { check, sleep, group } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
-const baseUrl = __ENV.BASE_URL || 'http://47.130.152.226';
-const loginUrl = `${baseUrl}:4005/login`;
-const patientUrl = `${baseUrl}:4004/api/patients`;
+const baseUrl = __ENV.BASE_URL || 'http://pm-alb-2089108845.ap-southeast-1.elb.amazonaws.com';
+const loginUrl = `${baseUrl}/login`;
+const patientUrl = `${baseUrl}/api/patients`;
 
 const errorRate = new Rate('errors');
 const loginDuration = new Trend('login_duration');
@@ -12,18 +12,19 @@ const patientsDuration = new Trend('patients_duration');
 
 export let options = {
   stages: [
-    { duration: '30s', target: 5 },
-    { duration: '1m', target: 20 },
-    { duration: '2m', target: 20 },
-    { duration: '30s', target: 0 },
+    { duration: '30s', target: 5 },    // Ramp up to 5 users
+    { duration: '1m', target: 20 },    // Ramp to 20 users
+    { duration: '2m', target: 20 },    // Stay at 20
+    { duration: '30s', target: 0 },    // Ramp down
   ],
   thresholds: {
-    errors: ['rate<0.05'],
-    http_req_duration: ['p(95)<3000'],
+    errors: ['rate<0.05'],             // Error rate < 5%
+    http_req_duration: ['p(95)<3000'], // 95% of requests under 3s
   },
 };
 
 export default function () {
+  // 1. Login
   let loginRes = http.post(loginUrl, JSON.stringify({
     email: 'chamuditha@hospital.com',
     password: 'Admin@123',
@@ -47,6 +48,7 @@ export default function () {
     'Content-Type': 'application/json',
   };
 
+  // 2. Get patients list
   let patientsRes = http.get(patientUrl, { headers: authHeaders });
   patientsDuration.add(patientsRes.timings.duration);
   let patientsOk = check(patientsRes, {
