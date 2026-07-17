@@ -116,8 +116,8 @@ jobs:
       - run: npm ci
       - name: Build frontend (with production API URLs)
         run: |
-          echo "VITE_API_GATEWAY=http://${{ secrets.ALB_DNS }}:4004/api" >> .env.production
-          echo "VITE_AUTH_SERVICE=http://${{ secrets.ALB_DNS }}:4005" >> .env.production
+          echo "VITE_API_GATEWAY=http://${{ secrets.ALB_DNS }}/api" >> .env.production
+          echo "VITE_AUTH_SERVICE=http://${{ secrets.ALB_DNS }}" >> .env.production
           npm run build
 
       - uses: actions/upload-artifact@v4

@@ -284,6 +284,7 @@ Built with Spring Cloud Gateway. Routes all external requests to internal servic
 ```
 External Port 4004
     │
+    ├── /login,/register,/admin/**  → auth-service:4005
     ├── /api/patients/**      → patient-service:4000
     ├── /api/doctors/**       → appointment-service:4006
     ├── /api/appointments/**  → appointment-service:4006

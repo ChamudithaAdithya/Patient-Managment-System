@@ -69,3 +69,8 @@ spring:
             - Path=/api-docs/appointments
           filters:
             - RewritePath=/api-docs/appointments, v3/api-docs
+
+        - id: auth-service-route
+          uri: http://auth-service:4005
+          predicates:
+            - Path=/login,/register,/admin/**
