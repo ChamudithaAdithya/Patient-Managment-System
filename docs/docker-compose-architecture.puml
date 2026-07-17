@@ -70,22 +70,15 @@ PATIENT --> RDS : "JDBC"
 APPT --> RDS : "JDBC"
 IMAGING --> RDS : "JDBC"
 
-' ===== DEPENDS_ON =====
-note bottom of ZK : depends_on: —\n(no deps, starts first)
-note bottom of KAFKA : depends_on: Zookeeper
-note bottom of BILLING : depends_on: —\n(starts early, gRPC server)
-note bottom of PATIENT : depends_on: Billing Service
-note bottom of ANALYTICS : depends_on: Billing + Patient
-note bottom of APPT : depends_on: Kafka
-note bottom of AUTH : depends_on: Kafka
-note bottom of IMAGING : depends_on: Kafka
-
-' ===== PORTS =====
-note right of GW : Host 4004 → Container 4004
-note right of AUTH : Host 4005 → Container 4005
-note right of BILLING : Host 4001 → 4001\nHost 9001 → 9001 (gRPC)
-note right of APPT : Host 4006 → Container 4006
-note right of IMAGING : Host 4007 → Container 4007
-note right of ANALYTICS : Host 4002 → Container 4002
+' ===== PORTS + DEPENDS_ON =====
+note bottom of ZK : Port: 2181 (internal)\nDepends: — (starts first)
+note bottom of KAFKA : Port: 9092 (internal)\nDepends: Zookeeper
+note bottom of GW : Host 4004 → Container 4004\nDepends: —
+note bottom of AUTH : Host 4005 → Container 4005\nDepends: Kafka
+note bottom of PATIENT : Port: 4000 (internal)\nDepends: Billing Service
+note bottom of BILLING : Host 4001 → 4001\nHost 9001 → 9001 (gRPC)\nDepends: — (starts early)
+note bottom of APPT : Host 4006 → Container 4006\nDepends: Kafka
+note bottom of IMAGING : Host 4007 → Container 4007\nDepends: Kafka
+note bottom of ANALYTICS : Host 4002 → Container 4002\nDepends: Billing + Patient
 
 @enduml

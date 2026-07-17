@@ -19,85 +19,81 @@ title <size:18><b>Cloud-Based Hospital Management System — Deployed Architectu
 
 ' ===== EXTERNAL =====
 actor "<b>User / Browser</b>" as USER
-rectangle "<b>CloudFront</b>\nCDN — frontend distribution" as CF #5294FF
-rectangle "<b>S3</b>\nhospital-frontend-dev-2026\nStatic React SPA" as S3_FE #7AA116
+
+rectangle "<b>CloudFront</b>\nd2vt8kqv1uwgpn.cloudfront.net\nHTTPS frontend distribution" as CF #5294FF
+rectangle "<b>S3 Frontend</b>\nhospital-frontend-dev-2026\nStatic React SPA (HTTP only)" as S3_FE #7AA116
 
 ' ===== VPC =====
-rectangle "<color:#FFFFFF><b>AWS VPC — ap-southeast-1</b></color>" as VPC #FFF7EE {
+rectangle "<color:#FFFFFF><b>AWS VPC — ap-southeast-1 (172.31.0.0/16)</b></color>" as VPC #FFF7EE {
   skinparam RectangleBackgroundColor #FFF7EE
   skinparam RectangleBorderColor #FF9900
   skinparam RectangleBorderThickness 3
 
-  rectangle "<color:#FFFFFF><b>Public Subnets — 10.0.1.0/24 + 10.0.2.0/24</b></color>" as SUBNET #D1FAE5 {
-    skinparam RectangleBackgroundColor #D1FAE5
-    skinparam RectangleBorderColor #059669
+  rectangle "<b>ALB</b>\npm-alb-2089108845\nHTTPS:443 → HTTP:4004\nSecurity policy: TLS 1.3" as ALB #059669
 
-    rectangle "<b>EC2 — pm-system</b>\nt3.medium | Amazon Linux 2023\nPublic IP: 47.130.152.226" as EC2 #FF9900 {
-      rectangle "<b>API Gateway</b>\nSpring Cloud Gateway\nPort 4004" as GW #FF9900
-      rectangle "<b>Auth Service</b>\nJWT Login/Register\nPort 4005" as AUTH #FF9900
-      rectangle "<b>Patient Service</b>\nPatient CRUD + gRPC\nPort 4000 (int)" as PATIENT #FF9900
-      rectangle "<b>Appointment Svc</b>\nSchedule + Consultations\nPort 4006" as APPT #FF9900
-      rectangle "<b>Imaging Service</b>\nMedical Image Upload\nPort 4007" as IMAGING #FF9900
-      rectangle "<b>Billing Service</b>\ngRPC billing mock\nPort 4001 / 9001" as BILLING #FF9900
-      rectangle "<b>Analytics Svc</b>\nKafka consumer\nPort 4002" as ANALYTICS #FF9900
-      rectangle "<b>Kafka</b>\nEvent bus\nPort 9092" as KAFKA #FF9900
-      rectangle "<b>ZooKeeper</b>\nKafka coordination\nPort 2181" as ZK #FF9900
-    }
+  rectangle "<color:#FFFFFF><b>EC2 — t3.medium</b></color>" as EC2 #FF9900 {
+    rectangle "<b>API Gateway</b>\nSpring Cloud Gateway\nPort 4004" as GW #FF9900
+    rectangle "<b>Auth Service</b>\nJWT Login/Register\nPort 4005" as AUTH #FF9900
+    rectangle "<b>Patient Service</b>\nPatient CRUD + gRPC\nPort 4000 (internal)" as PATIENT #FF9900
+    rectangle "<b>Appointment Svc</b>\nSchedule + Consultations\nPort 4006" as APPT #FF9900
+    rectangle "<b>Imaging Service</b>\nMedical Image Upload\nPort 4007" as IMAGING #FF9900
+    rectangle "<b>Billing Service</b>\ngRPC billing mock\nPort 4001 / 9001" as BILLING #FF9900
+    rectangle "<b>Analytics Svc</b>\nKafka consumer\nPort 4002" as ANALYTICS #FF9900
+    rectangle "<b>Kafka</b>\nEvent bus\nPort 9092" as KAFKA #FF9900
+    rectangle "<b>ZooKeeper</b>\nKafka coordination\nPort 2181" as ZK #FF9900
   }
 }
 
 ' ===== OUTSIDE VPC =====
 rectangle "<b>Docker Hub</b>\nchamudithaadithya/\npatient_management_system" as DH #E6794A
-rectangle "<b>RDS PostgreSQL</b>\npm-postgres\ndb.t3.micro | 20GB\nSingle AZ" as RDS #527FFF
+rectangle "<b>RDS PostgreSQL</b>\npm-postgres\nPort 5432\n(open to 0.0.0.0/0)" as RDS #527FFF
 rectangle "<b>GitHub Actions</b>\nCI/CD Pipeline\n5 jobs" as GHA #E6794A
 rectangle "<b>CloudWatch</b>\nDashboard + Alarms\nEC2 + RDS metrics" as CW #06B6D4
-rectangle "<b>IAM</b>\ngithub-actions user\nS3 + RDS encryption" as IAM #A468E6
-rectangle "<b>S3</b>\nmedical-images\n(Docker volume)" as S3_IMG #7AA116
+rectangle "<b>IAM</b>\ngithub-actions user\nS3 + RDS" as IAM #A468E6
 
 ' ===== RELATIONSHIPS =====
-' Frontend flow
-USER --> CF : "HTTPS\nhospital-frontend-\ndev-2026.s3-website-\nap-southeast-1\n.amazonaws.com"
-CF --> S3_FE : "Origin fetch"
+' Frontend flow: User → CloudFront → S3
+USER --> CF : "HTTPS\nd2vt8kqv1uwgpn\n.cloudfront.net"
+CF --> S3_FE : "Origin fetch (HTTP)"
 
-' API flow (direct to EC2)
-USER --> EC2 : "HTTP\n47.130.152.226:\n4004/api/*"
+' API flow: User → ALB (HTTPS) → Gateway
+USER --> ALB : "HTTPS\npm-alb-2089108845\n.ap-southeast-1\n.elb.amazonaws.com"
+ALB --> GW : "HTTP:4004\nforward to target group"
 
-' Gateway to services
-GW --> AUTH : "/login, /register"
+' Gateway routes to services
+GW --> AUTH : "/login, /register, /admin/**"
 GW --> PATIENT : "/api/patients/**"
 GW --> APPT : "/api/appointments/**\n/api/doctors/**\n/api/consultations/**"
 GW --> IMAGING : "/api/images/**"
 
-' Inter-service
-PATIENT --> BILLING : "<color:red><b>gRPC</b></color>"
-PATIENT --> KAFKA : "PatientEvent"
-APPT --> KAFKA : "AppointmentEvent"
-KAFKA --> ANALYTICS : "Consume"
+' Inter-service communication
+PATIENT --> BILLING : "<color:red><b>gRPC</b></color>\nbilling-service:9001"
+PATIENT --> KAFKA : "Publish PatientEvent"
+APPT --> KAFKA : "Publish AppointmentEvent"
+KAFKA --> ANALYTICS : "Consume events"
 ZK --> KAFKA : "Coordination"
 
-' Database
-PATIENT --> RDS : "JPA — patient_management"
-AUTH --> RDS : "JPA — patient_management"
-APPT --> RDS : "JPA — patient_management"
-IMAGING --> RDS : "JPA — patient_management"
+' Database connections
+AUTH --> RDS : "JDBC — patient_management"
+PATIENT --> RDS : "JDBC — patient_management"
+APPT --> RDS : "JDBC — patient_management"
+IMAGING --> RDS : "JDBC — patient_management"
 
-' Storage
-IMAGING --> S3_IMG : "Read/write images"
-
-' CI/CD
-GHA --> DH : "Build & push images"
+' CI/CD pipeline
+GHA --> DH : "Build & push Docker images"
 GHA --> EC2 : "SSH → git pull →\ndocker compose up -d"
-GHA --> S3_FE : "Sync frontend build"
+GHA --> S3_FE : "Sync frontend build to S3"
+GHA --> CF : "CloudFront invalidation\n(skip if no distribution)"
 
-' Security (cross-cutting)
+' Security
 IAM ---> RDS : "Encryption at rest"
 IAM ---> S3_FE : "Bucket policies"
 
 ' Monitoring
 CW ---> EC2 : "CPU, Network metrics"
-CW ---> RDS : "Connections, CPU"
+CW ---> RDS : "Connections, CPU usage"
 
-' Registry
+' Docker registry
 DH --> EC2 : "Pull images on deploy"
 
 @enduml
