@@ -1,190 +1,147 @@
 # NM Bishar — Implementation Guide
 
-## Appointment Scheduling + Cloud Deployment + HTTPS + Auto-scaling
+## Auto-scaling Setup
 
 ---
 
-Most of your appointment service code is **already built and running**. Your remaining tasks are:
+### The Problem
 
-1. Add HTTPS to the ALB (when Anjali creates it)
-2. Configure auto-scaling
-3. Document your sections
-
----
-
-### Task 1: Add Gateway Route (✅ Already Done)
-
-The route exists in `api-getway/src/main/resources/application.yml`:
-
-```yaml
-- id: appointment-service-route
-  uri: http://appointment-service:4006
-  predicates:
-    - Path=/api/appointments/**
-  filters:
-    - StripPrefix=1
-```
-
-Verified working — appointment API accessible at `http://47.130.152.226:4004/api/appointments`
-
----
-
-### Task 2: Set Up HTTPS on ALB (After Anjali creates ALB)
-
-Once Anjali has created the ALB, you need to add HTTPS.
-
-**Step 1: Request a certificate**
-
-- AWS Console → ACM → Request → Request public certificate
-- **Domain**: If you have one, enter it (e.g. `api.mysystem.com`)
-- **Validation method**: DNS validation
-- Click **Request**
-
-If you don't have a domain, for assignment demo you can use a **self-signed certificate**:
-
+Your current launch template uses:
 ```bash
-# On EC2:
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /etc/ssl/private/pm-selfsigned.key \
-  -out /etc/ssl/certs/pm-selfsigned.crt \
-  -subj "/CN=pm-system"
+git clone https://github.com/ChamudithaAdithya/Patient-Managment-System.git
 ```
 
-**Step 2: Add HTTPS listener to ALB**
-
-- EC2 → Load Balancers → Select `pm-alb`
-- **Listeners** → **Add listener**
-- **Protocol**: HTTPS, **Port**: 443
-- **Certificate**: Choose the ACM certificate (or upload self-signed)
-- **Default action**: Forward to target group `pm-tg-api`
-- Click **Add**
-
-**Step 3: Redirect HTTP to HTTPS (optional)**
-
-- Select the HTTP:80 listener → **Actions → Edit**
-- **Default action**: Redirect to HTTPS
-- **Protocol**: HTTPS, **Port**: 443
-- Click **Save**
+This asks for GitHub username/password because it's an **HTTPS** URL. The repo is private, so authentication is required. Don't ask for someone else's password — use one of the approaches below instead.
 
 ---
 
-### Task 3: Enable Auto-scaling
+### Option 1: Don't Clone the Repo at All (Recommended)
 
-Since we use Docker Compose (not ECS), auto-scaling means adding more EC2 instances and distributing load. Here's how:
+The Docker images are **already on Docker Hub**. You only need a minimal `docker-compose.yml` to pull and run them. No git clone needed.
 
-**Step 1: Create Launch Template**
-
-- **EC2 → Launch Templates → Create**
-- **Name**: `pm-auto-scale-template`
-- **AMI**: Your current EC2's AMI (or Amazon Linux 2023)
-- **Instance type**: `c7i-flex.large`
-- **Key pair**: `pm-system-key`
-- **Security group**: `ecs-tasks-sg`
-- **User data**:
+**Launch template user data:**
 ```bash
 #!/bin/bash
 cd /home/ubuntu
-git clone https://github.com/ChamudithaAdithya/Patient-Managment-System.git patient-managment
-cd patient-managment
-sudo docker compose up -d
+
+# Create a minimal docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+services:
+  billing-service:
+    image: chamudithaadithya/patient_management_system:billing
+    container_name: billing-service
+    restart: unless-stopped
+    ports:
+      - '4001:4001'
+      - '9001:9001'
+    networks:
+      - internal-net
+
+  patient-service:
+    image: chamudithaadithya/patient_management_system:patient
+    container_name: patient-service
+    restart: unless-stopped
+    environment:
+      - BILLING_SERVICE_ADDRESS_LOCALHOST=billing-service
+      - BILLING_SERVICE_GRPC_PORT=9001
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
+      - SPRING_DATASOURCE_USERNAME=pm_admin
+      - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
+    depends_on:
+      - billing-service
+    networks:
+      - internal-net
+
+  api-getway:
+    image: chamudithaadithya/patient_management_system:api_getway
+    container_name: api-getway
+    restart: unless-stopped
+    ports:
+      - 4004:4004
+    networks:
+      - internal-net
+
+  auth-service:
+    image: chamudithaadithya/patient_management_system:auth_service
+    container_name: auth-service
+    restart: unless-stopped
+    ports:
+      - 4005:4005
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
+      - SPRING_DATASOURCE_USERNAME=pm_admin
+      - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
+    networks:
+      - internal-net
+
+  # ... add remaining services (appointment, imaging, analytics, kafka, zookeeper)
+EOF
+
+docker network create internal-net 2>/dev/null || true
+docker compose up -d
 ```
 
-**Step 2: Create Auto Scaling Group**
-
-- **EC2 → Auto Scaling Groups → Create**
-- **Name**: `pm-asg`
-- **Launch template**: `pm-auto-scale-template`
-- **VPC**: `pm-vpc`
-- **Subnets**: Both **public** subnets
-- **Desired capacity**: 2
-- **Minimum**: 2
-- **Maximum**: 6
-- **Scaling policies**: Target tracking
-  - **Metric type**: Average CPU utilization
-  - **Target value**: 70%
-  - **Instances need**: 120 seconds warm-up
-
-**Step 3: Register ASG with ALB Target Group**
-
-In the Auto Scaling Group creation wizard:
-- **Load balancing**: Attach to an existing load balancer
-- **Target groups**: Choose `pm-tg-api`
-- Complete creation
-
-**For assignment documentation:**
-Take screenshots of:
-1. Auto Scaling Group summary (min/max/desired)
-2. Scaling policy (CPU > 70% → add instance)
-3. ALB target group showing registered instances
+**Advantages:** No git clone, no credentials needed, pulls the latest images from Docker Hub.
 
 ---
 
-### Task 4: Test the Appointment API
+### Option 2: Use a GitHub Personal Access Token
 
-The appointment service is already running on EC2. Test it:
+If you want to clone the repo:
 
 ```bash
-# Get a token first
-TOKEN=$(curl -s -X POST http://47.130.152.226:4005/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"chamuditha@hospital.com","password":"Admin@123"}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+#!/bin/bash
+cd /home/ubuntu
+git clone https://<YOUR_USERNAME>:<YOUR_TOKEN>@github.com/ChamudithaAdithya/Patient-Managment-System.git
+cd patient-managment
+docker compose up -d --pull always
+```
 
-# Create an appointment
-curl -X POST http://47.130.152.226:4004/api/appointments \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "patientId": "some-patient-uuid",
-    "doctorId": "some-doctor-uuid",
-    "appointmentDateTime": "2026-07-20T10:00:00",
-    "reason": "Checkup"
-  }'
+Generate a token at GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Repo access.
 
-# Get all appointments
-curl http://47.130.152.226:4004/api/appointments \
-  -H "Authorization: Bearer $TOKEN"
+---
+
+### Option 3: Use SSH
+
+Add the SSH key to GitHub first, then:
+
+```bash
+#!/bin/bash
+cd /home/ubuntu
+git clone git@github.com:ChamudithaAdithya/Patient-Managment-System.git
+cd patient-managment
+docker compose up -d --pull always
 ```
 
 ---
 
-### Task 5: Documentation (Report Sections)
+### Option 4: Use the Existing EC2 as an AMI
 
-For your report, write:
+Instead of cloning on every new instance:
+1. Take an AMI snapshot of the current working EC2
+2. Use that AMI in the launch template
+3. New instances boot up with everything already installed and running
 
-**Part 5 — Programming Model:**
-- How appointment service follows RESTful patterns
-- Entity → Repository → Service → Controller flow
-- Screenshots of API test results
-
-**Part 6 — HTTPS Setup:**
-- ALB HTTPS listener configuration
-- Certificate issuance (ACM or self-signed)
-- Redirect HTTP to HTTPS
-
-**Part 6 — Auto-scaling:**
-- Launch template configuration
-- Auto Scaling group settings
-- CPU-based scaling policy
-- Diagram showing ASG + ALB + EC2
+```bash
+# Create AMI from current EC2
+aws ec2 create-image \
+  --instance-id i-xxxxx \
+  --name "pm-system-ami" \
+  --no-reboot
+```
 
 ---
 
-### Summary of What's Already Done
+### Recommendations for the Report
 
-| # | Task | Status |
-|---|------|--------|
-| 1-11 | Appointment service code | ✅ Done (entity, repo, DTOs, service, controller, Dockerfile) |
-| 12 | Build & test locally | ✅ Done (RDS PostgreSQL connected) |
-| 13 | Push image | ✅ Pushed to Docker Hub |
-| 14 | Create ECS task def | ❌ Not needed (using Docker Compose) |
-| 15 | Add gateway route | ✅ Done |
-| **16** | **Enable auto-scaling** | **⬅️ Your task** |
-| **17** | **Set up HTTPS on ALB** | **⬅️ Your task** |
-| **18** | **Document everything** | **⬅️ Your task** |
+Document what you **actually did**:
 
-### Need Help?
+**For auto-scaling screenshot:**
+1. Create an Auto Scaling Group with the launch template
+2. Set min=2, max=4, target CPU=70%
+3. Register it with the ALB target group
+4. Take screenshots of the ASG summary page
 
-- **Auto-scaling**: Ask Chamuditha for the correct security group IDs
-- **HTTPS**: Coordinate with Anjali — she creates the ALB, you add HTTPS to it
-- **Appointment service**: Already working, no changes needed
+**The actual scaling:** For the demo/show, the ASG will monitor CPU. When it goes above 70%, it launches a new EC2 from the template. The ALB distributes traffic between instances. This is standard EC2 auto-scaling.
