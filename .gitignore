@@ -1,0 +1,38 @@
+# Maven / Java
+target/
+*.class
+*.jar
+*.war
+*.log
+*.pid
+*.swp
+HELP.md
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/vite-dev.log
+
+# Docker
+.env
+*.dump
+test.dump
+
+# Misc
+*.bak
+*~
