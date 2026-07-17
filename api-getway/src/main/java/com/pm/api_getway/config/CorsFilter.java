@@ -15,7 +15,7 @@ public class CorsFilter {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(
-                "http://hospital-frontend-dev-2026.s3-website-ap-southeast-1.amazonaws.com",
+                "http://hospital-frontend-dev-2026.s3-website*.amazonaws.com",
                 "http://localhost:5173"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
