@@ -1,0 +1,47 @@
+graph TB
+    subgraph INTERNAL_NET["Docker Network: internal-net (172.18.0.0/16)"]
+        subgraph GATEWAY["Gateway"]
+            GW["API Gateway — Spring Cloud Gateway<br/>Host 4004 → Container 4004 — Single entry point"]
+        end
+
+        subgraph KAFKA_LAYER["Message Broker"]
+            ZK["ZooKeeper — Port 2181 (internal)<br/>Kafka coordinator — Depends: none (starts first)"]
+            KAFKA["Kafka — Port 9092 (internal)<br/>Event bus — Depends: Zookeeper"]
+        end
+
+        subgraph SERVICES["Backend Services"]
+            AUTH["Auth Service — Host 4005 → 4005<br/>Login / Register / Admin — JWT token issuer<br/>Depends: Kafka"]
+            BILLING["Billing Service — Host 4001 → 4001<br/>Host 9001 → 9001 (gRPC)<br/>Depends: none (starts early)"]
+            PATIENT["Patient Service — Port 4000 (internal)<br/>Patient CRUD + gRPC client<br/>Depends: Billing Service"]
+            APPT["Appointment Service — Host 4006 → 4006<br/>Appointments / Doctors / Consultations<br/>Depends: Kafka"]
+            IMAGING["Imaging Service — Host 4007 → 4007<br/>Medical images — Depends: Kafka"]
+            ANALYTICS["Analytics Service — Host 4002 → 4002<br/>Kafka consumer — Depends: Billing + Patient"]
+        end
+    end
+
+    subgraph EXTERNAL["External Services"]
+        USER["User / Browser"]
+        S3_FE["S3 Frontend — hospital-frontend-dev-2026<br/>React SPA (HTTP)"]
+        ALB["ALB — pm-alb-2089108845<br/>ap-southeast-1"]
+        RDS["RDS PostgreSQL — pm-postgres<br/>AWS RDS (port 5432)"]
+    end
+
+    USER -->|"HTTP — loads frontend"| S3_FE
+    USER -->|"HTTP — pm-alb-...amazonaws.com"| ALB
+    ALB -->|"Forwards requests → /login, /api/patients/**"| GW
+
+    GW -->|"/login /register /admin/** → AUTH:4005"| AUTH
+    GW -->|"/api/patients/** (strip /api) → PATIENT:4000"| PATIENT
+    GW -->|"/api/appointments/** /api/doctors/**<br/>/api/consultations/** (strip /api) → APPT:4006"| APPT
+    GW -->|"/api/images/** (strip /api) → IMAGING:4007"| IMAGING
+
+    PATIENT -->|"gRPC — billing-service:9001"| BILLING
+    PATIENT -->|"Publish PatientEvent"| KAFKA
+    APPT -->|"Publish AppointmentEvent"| KAFKA
+    KAFKA -->|"Consume events"| ANALYTICS
+    ZK -->|"Coordination"| KAFKA
+
+    AUTH -->|"JDBC — pm-postgres:5432"| RDS
+    PATIENT -->|"JDBC"| RDS
+    APPT -->|"JDBC"| RDS
+    IMAGING -->|"JDBC"| RDS

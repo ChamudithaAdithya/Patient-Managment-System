@@ -31,8 +31,6 @@ services:
     ports:
       - '4001:4001'
       - '9001:9001'
-    environment:
-      - SERVER_MAX_HTTP_REQUEST_HEADER_SIZE=64KB
     networks:
       - internal-net
       
@@ -50,7 +48,6 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://pm-postgres.cfyk0wk8c4m1.ap-southeast-1.rds.amazonaws.com:5432/patient_management
       - SPRING_DATASOURCE_USERNAME=pm_admin
       - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
-      - SERVER_MAX_HTTP_REQUEST_HEADER_SIZE=64KB
     depends_on:
       - billing-service
     networks:
@@ -72,7 +69,6 @@ services:
       - internal-net
     environment:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
-      - SERVER_MAX_HTTP_REQUEST_HEADER_SIZE=64KB
 
   api-getway:
     build:
@@ -100,7 +96,6 @@ services:
       - SPRING_DATASOURCE_USERNAME=pm_admin
       - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
-      - SERVER_MAX_HTTP_REQUEST_HEADER_SIZE=64KB
     depends_on:
       - patient-kafka
     networks:
@@ -124,7 +119,6 @@ services:
       - SPRING_DATASOURCE_USERNAME=pm_admin
       - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
-      - SERVER_MAX_HTTP_REQUEST_HEADER_SIZE=64KB
 
   imaging-service:
     build:
@@ -140,7 +134,6 @@ services:
       - SPRING_DATASOURCE_USERNAME=pm_admin
       - SPRING_DATASOURCE_PASSWORD=PMSystem2026!
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=patient-kafka:9092
-      - SERVER_MAX_HTTP_REQUEST_HEADER_SIZE=64KB
     depends_on:
       - patient-kafka
     networks:
