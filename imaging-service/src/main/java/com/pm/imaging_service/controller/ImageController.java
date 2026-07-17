@@ -3,6 +3,8 @@ package com.pm.imaging_service.controller;
 import com.pm.imaging_service.dto.ImageResponseDTO;
 import com.pm.imaging_service.model.ImageType;
 import com.pm.imaging_service.service.ImageService;
+import com.pm.imaging_service.service.S3ImageService;
+
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -18,9 +21,31 @@ import java.util.UUID;
 public class ImageController {
 
     private final ImageService service;
+    private final S3ImageService s3ImageService;
+
+    public ImageController(S3ImageService s3ImageService) {
+        this.service = null;
+        this.s3ImageService = s3ImageService;
+    }
+
+    @PostMapping("/patients/{patientId}/upload")
+    public ResponseEntity<Map<String, String>> uploadToS3(
+            @PathVariable Long patientId,
+            @RequestParam("file") MultipartFile file) {
+        String key = s3ImageService.uploadImage(patientId, file);
+        String url = s3ImageService.getImageUrl(key);
+        return ResponseEntity.ok(Map.of("key", key, "url", url));
+    }
+
+    @GetMapping("/url")
+    public ResponseEntity<Map<String, String>> getUrl(@RequestParam String key) {
+        String url = s3ImageService.getImageUrl(key);
+        return ResponseEntity.ok(Map.of("url", url));
+    }
 
     public ImageController(ImageService service) {
         this.service = service;
+        this.s3ImageService = null;
     }
 
     @PostMapping("/upload")
