@@ -4,103 +4,100 @@ skinparam monochrome false
 skinparam backgroundColor #FFFFFF
 skinparam defaultFontName Arial
 skinparam defaultFontSize 11
+skinparam packageStyle rectangle
 
-title <size:18><b>Cloud-Based Hospital Management System — AWS Architecture</b></size>
+title <size:18><b>Cloud-Based Hospital Management System — Deployed Architecture</b></size>
 
-' ========== AWS STYLES ==========
-' VPC: Light orange
-rectangle "<color:#FFFFFF><b>AWS VPC — 10.0.0.0/16</b></color>" as VPC #FFF7EE {
+' ========== COLORS ==========
+' Compute: #FF9900 (orange)
+' Networking: #059669 (green)
+' Storage: #7AA116 (olive)
+' Database: #527FFF (blue)
+' Security: #A468E6 (purple)
+' CI/CD: #E6794A (burnt orange)
+' Monitoring: #06B6D4 (cyan)
+
+' ===== EXTERNAL =====
+actor "<b>User / Browser</b>" as USER
+rectangle "<b>CloudFront</b>\nCDN — frontend distribution" as CF #5294FF
+rectangle "<b>S3</b>\nhospital-frontend-dev-2026\nStatic React SPA" as S3_FE #7AA116
+
+' ===== VPC =====
+rectangle "<color:#FFFFFF><b>AWS VPC — ap-southeast-1</b></color>" as VPC #FFF7EE {
   skinparam RectangleBackgroundColor #FFF7EE
   skinparam RectangleBorderColor #FF9900
   skinparam RectangleBorderThickness 3
 
-  ' ===== Public Subnets =====
-  rectangle "<color:#065F46><b>Public Subnet A — 10.0.1.0/24</b></color>" as PUB_A #D1FAE5 {
+  rectangle "<color:#FFFFFF><b>Public Subnets — 10.0.1.0/24 + 10.0.2.0/24</b></color>" as SUBNET #D1FAE5 {
     skinparam RectangleBackgroundColor #D1FAE5
     skinparam RectangleBorderColor #059669
-    rectangle "<b>Application Load Balancer</b>\nPort 80 → 443 HTTPS\n/api/* → Backend Services" as ALB #5294FF
-    rectangle "<b>NAT Gateway</b>\nInternet for private subnets" as NAT #FF9900
+
+    rectangle "<b>EC2 — pm-system</b>\nt3.medium | Amazon Linux 2023\nPublic IP: 47.130.152.226" as EC2 #FF9900 {
+      rectangle "<b>API Gateway</b>\nSpring Cloud Gateway\nPort 4004" as GW #FF9900
+      rectangle "<b>Auth Service</b>\nJWT Login/Register\nPort 4005" as AUTH #FF9900
+      rectangle "<b>Patient Service</b>\nPatient CRUD + gRPC\nPort 4000 (int)" as PATIENT #FF9900
+      rectangle "<b>Appointment Svc</b>\nSchedule + Consultations\nPort 4006" as APPT #FF9900
+      rectangle "<b>Imaging Service</b>\nMedical Image Upload\nPort 4007" as IMAGING #FF9900
+      rectangle "<b>Billing Service</b>\ngRPC billing mock\nPort 4001 / 9001" as BILLING #FF9900
+      rectangle "<b>Analytics Svc</b>\nKafka consumer\nPort 4002" as ANALYTICS #FF9900
+      rectangle "<b>Kafka</b>\nEvent bus\nPort 9092" as KAFKA #FF9900
+      rectangle "<b>ZooKeeper</b>\nKafka coordination\nPort 2181" as ZK #FF9900
+    }
   }
-
-  rectangle "<color:#065F46><b>Public Subnet B — 10.0.2.0/24</b></color>" as PUB_B #D1FAE5 {
-    skinparam RectangleBackgroundColor #D1FAE5
-    skinparam RectangleBorderColor #059669
-    rectangle "<i>ALB (AZ B node)</i>" as ALB_B #5294FF #D1FAE5
-    rectangle "<i>NAT Gateway (standby)</i>" as NAT_B #FF9900 #D1FAE5
-  }
-
-  ' ===== Private Subnets =====
-  rectangle "<color:#0C4A6E><b>Private Subnet A — 10.0.3.0/24</b></color>" as PRIV_A #E0F2FE {
-    skinparam RectangleBackgroundColor #E0F2FE
-    skinparam RectangleBorderColor #0284C7
-
-    rectangle "<b>API Gateway</b>\nSpring Cloud Gateway\nPort 4004" as GW #FF9900
-    rectangle "<b>Patient Service</b>\nCRUD + S3 Upload\nPort 4000" as PATIENT #FF9900
-    rectangle "<b>Billing Service</b>\ngRPC mock\nPort 9001 / 4001" as BILLING #FF9900
-    rectangle "<b>Auth Service</b>\nJWT Login + Roles\nPort 4005" as AUTH #FF9900
-    rectangle "<b>Appointment Svc</b>\nSchedule + Conflict\nPort 4006" as APPT #FF9900
-    rectangle "<b>Analytics Svc</b>\nSQS Consumer\nPort 4002" as ANALYTICS #FF9900
-  }
-
-  rectangle "<color:#0C4A6E><b>Private Subnet B — 10.0.4.0/24</b></color>" as PRIV_B #E0F2FE {
-    skinparam RectangleBackgroundColor #E0F2FE
-    skinparam RectangleBorderColor #0284C7
-    rectangle "<i>API Gateway (standby)</i>" as GW_B #FF9900 #E0F2FE
-    rectangle "<i>Patient Service (standby)</i>" as PATIENT_B #FF9900 #E0F2FE
-    rectangle "<i>Billing (standby)</i>" as BILLING_B #FF9900 #E0F2FE
-    rectangle "<i>Auth (standby)</i>" as AUTH_B #FF9900 #E0F2FE
-    rectangle "<i>Appointment (standby)</i>" as APPT_B #FF9900 #E0F2FE
-    rectangle "<i>Analytics (standby)</i>" as ANALYTICS_B #FF9900 #E0F2FE
-  }
-
-  ' ===== Shared Resources =====
-  rectangle "<b>Amazon RDS (PostgreSQL)</b>\nMulti-AZ | db.t4g.micro\nDBs: patient_management, db_auth\nTables: patient, users, appointments" as RDS #527FFF
-  rectangle "<b>SQS</b>\npatient-events queue" as SQS #E6794A
 }
 
-' ===== Outside VPC =====
-rectangle "<b>Route 53</b>\nDNS" as R53 #5294FF
-rectangle "<b>CloudFront</b>\nCDN + HTTPS" as CF #5294FF
-rectangle "<b>Lambda</b>\nPatient Notifications" as LAMBDA #A468E6
-rectangle "<b>ECR</b>\nContainer Registry" as ECR #FF9900
-
-rectangle "<b>S3: Frontend</b>\nStatic Web + CloudFront" as S3_FE #7AA116
-rectangle "<b>S3: Medical Images</b>\nVersioning + Lifecycle" as S3_IMG #7AA116
-rectangle "<b>S3: Backups</b>\nDB dumps + logs" as S3_BAK #7AA116
+' ===== OUTSIDE VPC =====
+rectangle "<b>Docker Hub</b>\nchamudithaadithya/\npatient_management_system" as DH #E6794A
+rectangle "<b>RDS PostgreSQL</b>\npm-postgres\ndb.t3.micro | 20GB\nSingle AZ" as RDS #527FFF
+rectangle "<b>GitHub Actions</b>\nCI/CD Pipeline\n5 jobs" as GHA #E6794A
+rectangle "<b>CloudWatch</b>\nDashboard + Alarms\nEC2 + RDS metrics" as CW #06B6D4
+rectangle "<b>IAM</b>\ngithub-actions user\nS3 + RDS encryption" as IAM #A468E6
+rectangle "<b>S3</b>\nmedical-images\n(Docker volume)" as S3_IMG #7AA116
 
 ' ===== RELATIONSHIPS =====
-' External flow
-User --> R53 : "hospital.example.com"
-R53 --> CF
-CF --> ALB : "HTTPS"
-ALB --> GW : "/api/*"
+' Frontend flow
+USER --> CF : "HTTPS\nhospital-frontend-\ndev-2026.s3-website-\nap-southeast-1\n.amazonaws.com"
+CF --> S3_FE : "Origin fetch"
+
+' API flow (direct to EC2)
+USER --> EC2 : "HTTP\n47.130.152.226:\n4004/api/*"
+
+' Gateway to services
+GW --> AUTH : "/login, /register"
 GW --> PATIENT : "/api/patients/**"
-GW --> AUTH : "/api/login"
-GW --> APPT : "/api/appointments/**"
+GW --> APPT : "/api/appointments/**\n/api/doctors/**\n/api/consultations/**"
+GW --> IMAGING : "/api/images/**"
 
 ' Inter-service
 PATIENT --> BILLING : "<color:red><b>gRPC</b></color>"
-PATIENT --> SQS : "<color:#E6794A>patient.created event</color>"
-SQS --> ANALYTICS : "<color:#E6794A>Consume</color>"
-SQS --> LAMBDA : "<color:#A468E6>Trigger</color>"
+PATIENT --> KAFKA : "PatientEvent"
+APPT --> KAFKA : "AppointmentEvent"
+KAFKA --> ANALYTICS : "Consume"
+ZK --> KAFKA : "Coordination"
 
 ' Database
-PATIENT --> RDS : "JPA"
-AUTH --> RDS : "JPA"
-APPT --> RDS : "JPA"
+PATIENT --> RDS : "JPA — patient_management"
+AUTH --> RDS : "JPA — patient_management"
+APPT --> RDS : "JPA — patient_management"
+IMAGING --> RDS : "JPA — patient_management"
 
 ' Storage
-PATIENT -right-> S3_IMG : "Upload / Download"
-ECR --> PATIENT : "Pull images"
+IMAGING --> S3_IMG : "Read/write images"
 
-' Cross-AZ
-ALB -right-> ALB_B : "Cross-AZ routing"
-GW -right-> GW_B : "Fargate spread"
-PATIENT -right-> PATIENT_B : "Fargate spread"
-AUTH -right-> AUTH_B : "Fargate spread"
-APPT -right-> APPT_B : "Fargate spread"
+' CI/CD
+GHA --> DH : "Build & push images"
+GHA --> EC2 : "SSH → git pull →\ndocker compose up -d"
+GHA --> S3_FE : "Sync frontend build"
 
-' RDS Multi-AZ
-RDS -right-> RDS : "Synchronous replication to standby AZ"
+' Security (cross-cutting)
+IAM ---> RDS : "Encryption at rest"
+IAM ---> S3_FE : "Bucket policies"
+
+' Monitoring
+CW ---> EC2 : "CPU, Network metrics"
+CW ---> RDS : "Connections, CPU"
+
+' Registry
+DH --> EC2 : "Pull images on deploy"
 
 @enduml
