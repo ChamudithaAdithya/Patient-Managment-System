@@ -1,0 +1,91 @@
+@startuml
+!theme plain
+skinparam monochrome false
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam packageStyle rectangle
+
+title <size:18><b>Docker Compose Architecture — Container Network</b></size>
+
+' ===== COLORS =====
+' Gateway: #FF9900
+' Auth: #E6794A
+' Core services: #527FFF
+' Kafka: #7AA116
+' External: #999999
+
+' ===== EXTERNAL =====
+actor "<b>User / Browser</b>" as USER
+rectangle "<b>S3 Frontend</b>\nhospital-frontend-dev-2026\nReact SPA (HTTP)" as S3_FE #999999
+rectangle "<b>ALB</b>\npm-alb-2089108845\nap-southeast-1" as ALB #999999
+rectangle "<b>RDS PostgreSQL</b>\npm-postgres\nAWS RDS (port 5432)" as RDS #527FFF
+
+' ===== DOCKER NETWORK =====
+rectangle "<color:#FFFFFF><b>Docker Network: internal-net (172.18.0.0/16)</b></color>" as DOCKER_NET #FFF7EE {
+
+  ' ===== GATEWAY LAYER =====
+  rectangle "<b>API Gateway</b>\nSpring Cloud Gateway\nPort 4004 → 4004\nSingle entry point" as GW #FF9900
+
+  ' ===== KAFKA LAYER =====
+  rectangle "<b>ZooKeeper</b>\nPort 2181\nKafka coordinator" as ZK #7AA116
+  rectangle "<b>Kafka</b>\nPort 9092\nEvent bus" as KAFKA #7AA116
+
+  ' ===== BACKEND SERVICES =====
+  rectangle "<b>Auth Service</b>\nPort 4005 → 4005\nLogin / Register / Admin\nJWT token issuer" as AUTH #E6794A
+
+  rectangle "<b>Patient Service</b>\nPort 4000 (internal)\nPatient CRUD\ngRPC client (9001)" as PATIENT #527FFF
+
+  rectangle "<b>Billing Service</b>\nPort 4001 → 4001\ngRPC server (9001)" as BILLING #527FFF
+
+  rectangle "<b>Appointment Service</b>\nPort 4006 → 4006\nAppointments / Doctors / Consultations" as APPT #527FFF
+
+  rectangle "<b>Imaging Service</b>\nPort 4007 → 4007\nMedical images\nVolume: medical-images" as IMAGING #527FFF
+
+  rectangle "<b>Analytics Service</b>\nPort 4002 → 4002\nKafka consumer" as ANALYTICS #527FFF
+
+}
+
+' ===== EXTERNAL CONNECTIONS =====
+USER --> ALB : "HTTP\npm-alb-...amazonaws.com"
+USER --> S3_FE : "HTTP loads frontend"
+ALB --> GW : "Forwards requests\n→ /login, /api/patients/**"
+
+' ===== GATEWAY ROUTES =====
+GW --> AUTH : "/login → AUTH:4005\n/register → AUTH:4005\n/admin/** → AUTH:4005"
+GW --> PATIENT : "/api/patients/**\n(strip /api) → PATIENT:4000"
+GW --> APPT : "/api/appointments/**\n/api/doctors/**\n/api/consultations/**\n(strip /api) → APPT:4006"
+GW --> IMAGING : "/api/images/**\n(strip /api) → IMAGING:4007"
+
+' ===== INTER-SERVICE =====
+PATIENT --> BILLING : "<color:red><b>gRPC</b></color>\nbilling-service:9001"
+PATIENT --> KAFKA : "Publish PatientEvent"
+APPT --> KAFKA : "Publish AppointmentEvent"
+KAFKA --> ANALYTICS : "Consume events"
+ZK --> KAFKA : "Coordination"
+
+' ===== DATABASE =====
+AUTH --> RDS : "JDBC\npm-postgres:5432"
+PATIENT --> RDS : "JDBC"
+APPT --> RDS : "JDBC"
+IMAGING --> RDS : "JDBC"
+
+' ===== DEPENDS_ON =====
+note bottom of ZK : depends_on: —\n(no deps, starts first)
+note bottom of KAFKA : depends_on: Zookeeper
+note bottom of BILLING : depends_on: —\n(starts early, gRPC server)
+note bottom of PATIENT : depends_on: Billing Service
+note bottom of ANALYTICS : depends_on: Billing + Patient
+note bottom of APPT : depends_on: Kafka
+note bottom of AUTH : depends_on: Kafka
+note bottom of IMAGING : depends_on: Kafka
+
+' ===== PORTS =====
+note right of GW : Host 4004 → Container 4004
+note right of AUTH : Host 4005 → Container 4005
+note right of BILLING : Host 4001 → 4001\nHost 9001 → 9001 (gRPC)
+note right of APPT : Host 4006 → Container 4006
+note right of IMAGING : Host 4007 → Container 4007
+note right of ANALYTICS : Host 4002 → Container 4002
+
+@enduml
