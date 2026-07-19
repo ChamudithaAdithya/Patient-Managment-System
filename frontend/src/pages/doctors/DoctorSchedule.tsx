@@ -3,13 +3,18 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getByDoctor, getAvailableSlots } from '../../api/appointments'
 import { getById as getDoctorById } from '../../api/doctors'
 import { getAll as getDoctors } from '../../api/doctors'
-import { Card } from '../../components/ui/Card'
-import { Badge } from '../../components/ui/Badge'
-import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
-import { Button } from '../../components/ui/Button'
+import { Card, Tag, Typography, Row, Col, Select, DatePicker, Button, Spin, List } from 'antd'
 import type { Appointment } from '../../types/appointment'
 import type { Doctor } from '../../types/doctor'
+
+const { Title, Text } = Typography
+const { Option } = Select
+
+const statusColors: Record<string, string> = {
+  SCHEDULED: 'gold',
+  COMPLETED: 'green',
+  CANCELLED: 'red',
+}
 
 export default function DoctorSchedule() {
   const navigate = useNavigate()
@@ -55,78 +60,87 @@ export default function DoctorSchedule() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Doctor Schedule</h1>
+    <div>
+      <Title level={4} style={{ marginBottom: 16 }}>Doctor Schedule</Title>
 
-      <Card>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-60 flex-1">
-            <Select
-              label="Doctor"
-              placeholder="Select a doctor"
-              options={doctors.map((d) => ({ value: d.id, label: `${d.name} (${d.specialization || 'General'})` }))}
-              value={doctorId}
-              onChange={(e) => setDoctorId(e.target.value)}
-            />
-          </div>
-          <div className="w-48">
-            <Input
-              label="Date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          <Button onClick={handleSearch} loading={loading}>Search</Button>
-        </div>
+      <Card style={{ marginBottom: 16 }}>
+        <Row gutter={[16, 16]} align="bottom">
+          <Col xs={24} sm={12} md={8}>
+            <div>
+              <Text style={{ display: 'block', marginBottom: 4 }}>Doctor</Text>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Select a doctor"
+                value={doctorId || undefined}
+                onChange={(v) => setDoctorId(v)}
+              >
+                {doctors.map((d) => (
+                  <Option key={d.id} value={d.id}>{d.name} ({d.specialization || 'General'})</Option>
+                ))}
+              </Select>
+            </div>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <div>
+              <Text style={{ display: 'block', marginBottom: 4 }}>Date</Text>
+              <DatePicker
+                style={{ width: '100%' }}
+                onChange={(d) => setDate(d ? d.format('YYYY-MM-DD') : '')}
+              />
+            </div>
+          </Col>
+          <Col xs={24} sm={12} md={4}>
+            <Button type="primary" onClick={handleSearch} loading={loading}>Search</Button>
+          </Col>
+        </Row>
       </Card>
 
-      {doctorName && <p className="text-sm text-gray-500">Showing schedule for <span className="font-medium text-gray-900">{doctorName}</span></p>}
+      {doctorName && (
+        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+          Showing schedule for <Text strong>{doctorName}</Text>
+        </Text>
+      )}
 
       {searched && !loading && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card title={`Appointments (${appointments.length})`}>
-            {appointments.length === 0 ? (
-              <p className="text-sm text-gray-500">No appointments found</p>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {appointments.map((a) => (
-                  <div
-                    key={a.id}
-                    className="flex cursor-pointer items-center justify-between py-3 hover:bg-gray-50"
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={12}>
+            <Card title={`Appointments (${appointments.length})`}>
+              <List
+                dataSource={appointments}
+                locale={{ emptyText: 'No appointments found' }}
+                renderItem={(a: Appointment) => (
+                  <List.Item
+                    style={{ cursor: 'pointer' }}
                     onClick={() => navigate(`/appointments/${a.id}`)}
+                    actions={[<Tag color={statusColors[a.status]}>{a.status}</Tag>]}
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {new Date(a.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      <p className="text-xs text-gray-500">Patient: {a.patientId.slice(0, 8)}...</p>
-                      <p className="text-xs text-gray-500">{a.reason}</p>
-                    </div>
-                    <Badge variant={a.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card title={`Available Slots (${slots.length})`}>
-            {slots.length === 0 ? (
-              <p className="text-sm text-gray-500">No available slots for this date</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {slots.map((slot) => (
-                  <div
-                    key={slot}
-                    className="rounded-lg border border-gray-200 px-3 py-2 text-center text-sm text-gray-700"
-                  >
-                    {new Date(slot).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
+                    <List.Item.Meta
+                      title={new Date(a.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      description={<>{a.reason}<br /><Text type="secondary">Patient: {a.patientId.slice(0, 8)}...</Text></>}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} lg={12}>
+            <Card title={`Available Slots (${slots.length})`}>
+              {slots.length === 0 ? (
+                <Text type="secondary">No available slots for this date</Text>
+              ) : (
+                <Row gutter={[8, 8]}>
+                  {slots.map((slot) => (
+                    <Col key={slot}>
+                      <Tag style={{ padding: '4px 12px', fontSize: 14 }}>
+                        {new Date(slot).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Tag>
+                    </Col>
+                  ))}
+                </Row>
+              )}
+            </Card>
+          </Col>
+        </Row>
       )}
     </div>
   )

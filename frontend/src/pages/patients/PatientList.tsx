@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Table, Tag, Button, Space, Card, Typography, Popconfirm, message } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
 import { getAll, remove } from '../../api/patients'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { Card } from '../../components/ui/Card'
-import { Table, type Column } from '../../components/ui/Table'
-import { toast } from '../../components/ui/Toast'
 import type { Patient } from '../../types/patient'
+
+const { Title } = Typography
 
 export default function PatientList() {
   const navigate = useNavigate()
@@ -22,48 +21,62 @@ export default function PatientList() {
 
   useEffect(() => { load() }, [])
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!confirm('Delete this patient?')) return
+  const handleDelete = async (id: string) => {
     try {
       await remove(id)
-      toast({ message: 'Patient deleted', type: 'success' })
+      message.success('Patient deleted')
       load()
     } catch {
-      toast({ message: 'Failed to delete patient', type: 'error' })
+      message.error('Failed to delete patient')
     }
   }
 
-  const columns: Column<Patient>[] = [
-    { key: 'name', header: 'Name' },
-    { key: 'email', header: 'Email' },
-    { key: 'phone', header: 'Phone' },
-    { key: 'address', header: 'Address' },
+  const columns = [
+    { title: 'Name', dataIndex: 'name', key: 'name' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    { title: 'Phone', dataIndex: 'phone', key: 'phone' },
+    { title: 'Address', dataIndex: 'address', key: 'address', ellipsis: true },
     {
+      title: 'Status',
       key: 'status',
-      header: 'Status',
-      render: (p) => <Badge variant={p.status === 'INACTIVE' ? 'CANCELLED' : 'SCHEDULED'}>{p.status || 'ACTIVE'}</Badge>,
+      render: (_: unknown, p: Patient) => (
+        <Tag color={p.status === 'INACTIVE' ? 'red' : 'green'}>{p.status || 'ACTIVE'}</Tag>
+      ),
     },
     {
+      title: '',
       key: 'actions',
-      header: '',
-      render: (p) => (
-        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" onClick={() => navigate(`/patients/${p.id}`)}>Edit</Button>
-          <Button variant="danger" onClick={(e) => handleDelete(p.id, e)}>{p.status === 'INACTIVE' ? 'Activate' : 'Delete'}</Button>
-        </div>
+      render: (_: unknown, p: Patient) => (
+        <Space>
+          <Button type="link" onClick={() => navigate(`/patients/${p.id}`)}>Edit</Button>
+          <Popconfirm
+            title="Delete this patient?"
+            onConfirm={() => handleDelete(p.id)}
+          >
+            <Button type="link" danger>{p.status === 'INACTIVE' ? 'Activate' : 'Delete'}</Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
-        <Button onClick={() => navigate('/patients/new')}>+ New Patient</Button>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <Title level={4} style={{ margin: 0 }}>Patients</Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/patients/new')}>New Patient</Button>
       </div>
       <Card>
-        <Table columns={columns} data={patients} loading={loading} onRowClick={(p) => navigate(`/patients/${p.id}`)} />
+        <Table
+          columns={columns}
+          dataSource={patients}
+          rowKey="id"
+          loading={loading}
+          onRow={(p) => ({
+            onClick: () => navigate(`/patients/${p.id}`),
+            style: { cursor: 'pointer' },
+          })}
+        />
       </Card>
     </div>
   )

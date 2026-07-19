@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AppLayout } from './components/layout/AppLayout'
-import { ToastContainer } from './components/ui/Toast'
+
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import PatientList from './pages/patients/PatientList'
@@ -22,7 +22,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ToastContainer />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<ProtectedRoute />}>

@@ -1,74 +1,124 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Form, Input, Button, Card, Typography, Select, message } from 'antd'
+import { UserOutlined, LockOutlined, MailOutlined, SafetyOutlined } from '@ant-design/icons'
 import { useAuth } from '../hooks/useAuth'
-import { Button } from '../components/ui/Button'
-import { Input } from '../components/ui/Input'
-import { Select } from '../components/ui/Select'
+
+const { Title, Text } = Typography
 
 export default function Login() {
   const { login, register } = useAuth()
   const navigate = useNavigate()
   const [isRegister, setIsRegister] = useState(false)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [role, setRole] = useState<'PATIENT' | 'DOCTOR'>('PATIENT')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+  const handleSubmit = async (values: Record<string, string>) => {
     setLoading(true)
     try {
       if (isRegister) {
-        await register({ name, email, password, role })
+        await register({ name: values.name, email: values.email, password: values.password, role: values.role as 'PATIENT' | 'DOCTOR' })
       } else {
-        await login({ email, password })
+        await login({ email: values.email, password: values.password })
       }
       navigate('/dashboard', { replace: true })
     } catch (err: unknown) {
       const msg = err && typeof err === 'object' && 'response' in err
         ? (err as { response: { data: { message?: string } } }).response.data?.message
         : undefined
-      setError(msg || (isRegister ? 'Registration failed' : 'Invalid email or password'))
+      message.error(msg || (isRegister ? 'Registration failed' : 'Invalid email or password'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-lg">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Patient Management</h1>
-          <p className="mt-1 text-sm text-gray-500">
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: 24,
+      }}
+    >
+      <Card
+        styles={{ body: { padding: 40 } }}
+        style={{ width: 420, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 48, marginBottom: 8, color: '#667eea' }}>
+            <SafetyOutlined />
+          </div>
+          <Title level={3} style={{ marginBottom: 4 }}>Patient Management</Title>
+          <Text type="secondary">
             {isRegister ? 'Create a new account' : 'Sign in to your account'}
-          </p>
+          </Text>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegister && <Input label="Full Name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />}
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+
+        <Form layout="vertical" onFinish={handleSubmit} autoComplete="off" size="large">
           {isRegister && (
-            <Select label="Role" value={role} onChange={(e) => setRole(e.target.value as 'PATIENT' | 'DOCTOR')} options={[
-              { value: 'PATIENT', label: 'Patient' },
-              { value: 'DOCTOR', label: 'Doctor' },
-            ]} />
+            <Form.Item
+              name="name"
+              label="Full Name"
+              rules={[{ required: true, message: 'Please enter your name' }]}
+            >
+              <Input prefix={<UserOutlined />} placeholder="Full Name" />
+            </Form.Item>
           )}
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" loading={loading} className="w-full">
-            {isRegister ? 'Create account' : 'Sign in'}
-          </Button>
-        </form>
-        <p className="mt-4 text-center text-sm text-gray-500">
+
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[{ required: true, type: 'email', message: 'Please enter a valid email' }]}
+          >
+            <Input prefix={<MailOutlined />} placeholder="Email" />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[{ required: true, message: 'Please enter your password' }]}
+          >
+            <Input.Password prefix={<LockOutlined />} placeholder="Password" />
+          </Form.Item>
+
+          {isRegister && (
+            <Form.Item name="role" label="Role" rules={[{ required: true }]} initialValue="PATIENT">
+              <Select
+                options={[
+                  { value: 'PATIENT', label: 'Patient' },
+                  { value: 'DOCTOR', label: 'Doctor' },
+                ]}
+              />
+            </Form.Item>
+          )}
+
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button type="primary" htmlType="submit" loading={loading} block size="large">
+              {isRegister ? 'Create Account' : 'Sign In'}
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
           {isRegister ? (
-            <>Already have an account?{' '}<button type="button" onClick={() => setIsRegister(false)} className="text-blue-600 hover:underline font-medium">Sign in</button></>
+            <Text>
+              Already have an account?{' '}
+              <Button type="link" onClick={() => setIsRegister(false)} style={{ padding: 0 }}>
+                Sign in
+              </Button>
+            </Text>
           ) : (
-            <>Don&apos;t have an account?{' '}<button type="button" onClick={() => setIsRegister(true)} className="text-blue-600 hover:underline font-medium">Register</button></>
+            <Text>
+              Don't have an account?{' '}
+              <Button type="link" onClick={() => setIsRegister(true)} style={{ padding: 0 }}>
+                Register
+              </Button>
+            </Text>
           )}
-        </p>
-      </div>
+        </div>
+      </Card>
     </div>
   )
 }

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { getStaff, createStaff, deleteStaff } from '../../api/auth'
-import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
-import { toast } from '../../components/ui/Toast'
+import { Card, Button, Input, Typography, Table, Modal, Form, message, Popconfirm } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+
+const { Title } = Typography
 
 interface Staff {
   id: string
@@ -16,8 +16,8 @@ interface Staff {
 export default function StaffList() {
   const [staff, setStaff] = useState<Staff[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [modalOpen, setModalOpen] = useState(false)
+  const [form] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
 
   const load = () => {
@@ -27,75 +27,81 @@ export default function StaffList() {
 
   useEffect(() => { load() }, [])
 
-  const handleCreate = async () => {
-    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) {
-      toast({ message: 'All fields required', type: 'error' })
-      return
-    }
+  const handleCreate = async (values: { name: string; email: string; password: string }) => {
     setSubmitting(true)
     try {
-      await createStaff(form)
-      toast({ message: 'Staff created', type: 'success' })
-      setShowForm(false)
-      setForm({ name: '', email: '', password: '' })
+      await createStaff(values)
+      message.success('Staff created')
+      setModalOpen(false)
+      form.resetFields()
       load()
     } catch {
-      toast({ message: 'Failed to create staff', type: 'error' })
+      message.error('Failed to create staff')
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deactivate this staff member?')) return
     try {
       await deleteStaff(id)
-      toast({ message: 'Staff deactivated', type: 'success' })
+      message.success('Staff deactivated')
       load()
     } catch {
-      toast({ message: 'Failed to deactivate', type: 'error' })
+      message.error('Failed to deactivate')
     }
   }
 
+  const columns = [
+    { title: 'Name', dataIndex: 'name', key: 'name' },
+    { title: 'Email', dataIndex: 'email', key: 'email' },
+    {
+      title: '',
+      key: 'actions',
+      render: (_: unknown, r: Staff) => (
+        <Popconfirm title="Deactivate this staff member?" onConfirm={() => handleDelete(r.id)}>
+          <Button danger size="small">Deactivate</Button>
+        </Popconfirm>
+      ),
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-        <Button onClick={() => setShowForm(!showForm)}>{showForm ? 'Cancel' : 'New Staff'}</Button>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <Title level={4} style={{ margin: 0 }}>Staff Management</Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>New Staff</Button>
       </div>
 
-      {showForm && (
-        <Card title="Create New Staff Member">
-          <div className="space-y-3">
-            <Input label="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <Input label="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-            <Button onClick={handleCreate} loading={submitting}>Create Staff</Button>
-          </div>
-        </Card>
-      )}
-
-      <Card title={`Staff (${staff.length})`}>
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="size-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          </div>
-        ) : staff.length === 0 ? (
-          <p className="text-sm text-gray-500">No staff members</p>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {staff.map((s) => (
-              <div key={s.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{s.name}</p>
-                  <p className="text-xs text-gray-500">{s.email}</p>
-                </div>
-                <Button variant="danger" size="sm" onClick={() => handleDelete(s.id)}>Deactivate</Button>
-              </div>
-            ))}
-          </div>
-        )}
+      <Card>
+        <Table
+          columns={columns}
+          dataSource={staff}
+          rowKey="id"
+          loading={loading}
+          locale={{ emptyText: 'No staff members' }}
+        />
       </Card>
+
+      <Modal
+        title="Create New Staff Member"
+        open={modalOpen}
+        onCancel={() => { setModalOpen(false); form.resetFields() }}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreate}>
+          <Form.Item name="name" label="Full Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="password" label="Password" rules={[{ required: true }]}>
+            <Input.Password />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" loading={submitting}>Create Staff</Button>
+        </Form>
+      </Modal>
     </div>
   )
 }

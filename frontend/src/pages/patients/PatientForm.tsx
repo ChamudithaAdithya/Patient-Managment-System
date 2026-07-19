@@ -1,82 +1,99 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Form, Input, Button, Card, Typography, DatePicker, Spin, message } from 'antd'
 import { getById, create, update } from '../../api/patients'
-import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
-import { Card } from '../../components/ui/Card'
-import { toast } from '../../components/ui/Toast'
 import { parseError } from '../../lib/errorHandler'
 import type { PatientRequest } from '../../types/patient'
+import dayjs from 'dayjs'
+
+const { Title } = Typography
 
 export default function PatientForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isEdit = !!id
-
-  const [form, setForm] = useState<PatientRequest>({ name: '', email: '', address: '', dateOfBirth: '', registeredDate: '', phone: '' })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(isEdit)
 
   useEffect(() => {
     if (id) {
       getById(id)
-        .then((p) => setForm({ name: p.name, email: p.email, address: p.address, dateOfBirth: p.dateOfBirth, registeredDate: p.registeredDate, phone: p.phone || '' }))
+        .then((p) => form.setFieldsValue({
+          ...p,
+          dateOfBirth: p.dateOfBirth ? dayjs(p.dateOfBirth) : undefined,
+          registeredDate: p.registeredDate ? dayjs(p.registeredDate) : undefined,
+        }))
         .finally(() => setFetching(false))
     }
   }, [id])
 
-  const updateField = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
-    setErrors((prev) => { const next = { ...prev }; delete next[field]; return next })
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (values: Record<string, unknown>) => {
     setLoading(true)
-    setErrors({})
     try {
+      const payload: PatientRequest = {
+        name: values.name as string,
+        email: values.email as string,
+        phone: (values.phone as string) || '',
+        address: values.address as string,
+        dateOfBirth: values.dateOfBirth ? (values.dateOfBirth as dayjs.Dayjs).format('YYYY-MM-DD') : '',
+        registeredDate: values.registeredDate ? (values.registeredDate as dayjs.Dayjs).format('YYYY-MM-DD') : '',
+      }
       if (isEdit) {
-        await update(id!, form)
-        toast({ message: 'Patient updated', type: 'success' })
+        await update(id!, payload)
+        message.success('Patient updated')
       } else {
-        await create(form)
-        toast({ message: 'Patient created', type: 'success' })
+        await create(payload)
+        message.success('Patient created')
       }
       navigate('/patients')
     } catch (err) {
       const parsed = parseError(err)
-      setErrors(parsed.fieldErrors)
-      toast({ message: parsed.message, type: 'error' })
+      if (parsed.fieldErrors) {
+        const fields = Object.entries(parsed.fieldErrors).map(([name, msg]) => ({
+          name,
+          errors: [msg as string],
+        }))
+        form.setFields(fields)
+      }
+      message.error(parsed.message)
     } finally {
       setLoading(false)
     }
   }
 
   if (fetching) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="size-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-      </div>
-    )
+    return <div style={{ textAlign: 'center', padding: 80 }}><Spin size="large" /></div>
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">{isEdit ? 'Edit Patient' : 'New Patient'}</h1>
+    <div style={{ maxWidth: 560, margin: '0 auto' }}>
+      <Title level={4} style={{ marginBottom: 16 }}>{isEdit ? 'Edit Patient' : 'New Patient'}</Title>
       <Card>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input label="Full Name" value={form.name} onChange={(e) => updateField('name', e.target.value)} error={errors.name} required />
-          <Input label="Email" type="email" value={form.email} onChange={(e) => updateField('email', e.target.value)} error={errors.email} required />
-          <Input label="Phone" value={form.phone || ''} onChange={(e) => updateField('phone', e.target.value)} error={errors.phone} />
-          <Input label="Address" value={form.address} onChange={(e) => updateField('address', e.target.value)} error={errors.address} required />
-          <Input label="Date of Birth" type="date" value={form.dateOfBirth} onChange={(e) => updateField('dateOfBirth', e.target.value)} error={errors.dateOfBirth} required />
-          <Input label="Registered Date" type="date" value={form.registeredDate} onChange={(e) => updateField('registeredDate', e.target.value)} error={errors.registeredDate} required />
-          <div className="flex gap-3">
-            <Button type="submit" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
-            <Button variant="secondary" type="button" onClick={() => navigate('/patients')}>Cancel</Button>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
+          <Form.Item name="name" label="Full Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="phone" label="Phone">
+            <Input />
+          </Form.Item>
+          <Form.Item name="address" label="Address" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="dateOfBirth" label="Date of Birth" rules={[{ required: true }]}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="registeredDate" label="Registered Date" rules={[{ required: true }]}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button type="primary" htmlType="submit" loading={loading}>{isEdit ? 'Update' : 'Create'}</Button>
+            <Button onClick={() => navigate('/patients')}>Cancel</Button>
           </div>
-        </form>
+        </Form>
       </Card>
     </div>
   )

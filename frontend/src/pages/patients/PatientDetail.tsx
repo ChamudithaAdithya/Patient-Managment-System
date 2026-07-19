@@ -4,14 +4,20 @@ import { getById } from '../../api/patients'
 import { getByPatient, getPatientConsultations } from '../../api/appointments'
 import { getPatientImages, getImageUrl } from '../../api/images'
 import { getAll as getDoctors } from '../../api/doctors'
-import { Card } from '../../components/ui/Card'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
+import { Descriptions, Card, Tag, Button, Typography, Spin, List, Tabs } from 'antd'
 import type { Patient } from '../../types/patient'
 import type { Appointment } from '../../types/appointment'
 import type { Doctor } from '../../types/doctor'
 import type { Consultation } from '../../types/consultation'
 import type { MedicalImage } from '../../types/image'
+
+const { Title, Text } = Typography
+
+const statusColors: Record<string, string> = {
+  SCHEDULED: 'gold',
+  COMPLETED: 'green',
+  CANCELLED: 'red',
+}
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>()
@@ -39,105 +45,103 @@ export default function PatientDetail() {
   }, [id])
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="size-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-      </div>
-    )
+    return <div style={{ textAlign: 'center', padding: 80 }}><Spin size="large" /></div>
   }
 
   if (!patient) {
-    return <p className="text-gray-500">Patient not found</p>
+    return <Text>Patient not found</Text>
   }
 
+  const tabItems = [
+    {
+      key: 'appointments',
+      label: `Appointments (${appointments.length})`,
+      children: (
+        <List
+          dataSource={appointments}
+          locale={{ emptyText: 'No appointments' }}
+          renderItem={(a: Appointment) => (
+            <List.Item
+              actions={[<Button type="link" onClick={() => navigate(`/appointments/${a.id}`)}>View</Button>]}
+            >
+              <List.Item.Meta
+                title={`${new Date(a.appointmentDateTime).toLocaleDateString()} ${new Date(a.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                description={<>Doctor: {doctorMap[a.doctorId] || a.doctorId}<br />{a.reason}</>}
+              />
+              <Tag color={statusColors[a.status]}>{a.status}</Tag>
+            </List.Item>
+          )}
+        />
+      ),
+    },
+    {
+      key: 'consultations',
+      label: `Consultations (${consultations.length})`,
+      children: (
+        <List
+          dataSource={consultations}
+          locale={{ emptyText: 'No consultations' }}
+          renderItem={(c: Consultation) => (
+            <List.Item>
+              <List.Item.Meta
+                title={`${new Date(c.createdDate).toLocaleDateString()} — Doctor: ${doctorMap[c.doctorId] || c.doctorId}`}
+                description={
+                  <>
+                    <div><Text strong>Symptoms:</Text> {c.symptoms}</div>
+                    {c.diagnosis && <div><Text strong>Diagnosis:</Text> {c.diagnosis}</div>}
+                    {c.notes && <div><Text strong>Notes:</Text> {c.notes}</div>}
+                  </>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      ),
+    },
+    {
+      key: 'images',
+      label: `Medical Images (${images.length})`,
+      children: (
+        <List
+          dataSource={images}
+          locale={{ emptyText: 'No images' }}
+          renderItem={(img: MedicalImage) => (
+            <List.Item
+              actions={[
+                <a href={getImageUrl(img.id)} target="_blank" rel="noopener noreferrer">View</a>,
+              ]}
+            >
+              <List.Item.Meta
+                title={img.fileName}
+                description={`${img.imageType} · ${new Date(img.uploadedDate).toLocaleDateString()}`}
+              />
+            </List.Item>
+          )}
+        />
+      ),
+    },
+  ]
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">{patient.name}</h1>
-          <Badge variant={patient.status === 'INACTIVE' ? 'CANCELLED' : 'SCHEDULED'}>{patient.status || 'ACTIVE'}</Badge>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Title level={4} style={{ margin: 0 }}>{patient.name}</Title>
+          <Tag color={patient.status === 'INACTIVE' ? 'red' : 'green'}>{patient.status || 'ACTIVE'}</Tag>
         </div>
-        <Button onClick={() => navigate(`/patients/${id}/edit`)}>Edit</Button>
+        <Button type="primary" onClick={() => navigate(`/patients/${id}/edit`)}>Edit</Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <p className="text-sm text-gray-500">Email</p>
-          <p className="mt-1 font-medium">{patient.email}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-gray-500">Phone</p>
-          <p className="mt-1 font-medium">{patient.phone || '-'}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-gray-500">Address</p>
-          <p className="mt-1 font-medium">{patient.address}</p>
-        </Card>
-      </div>
-
-      <Card title={`Appointments (${appointments.length})`}>
-        {appointments.length === 0 ? (
-          <p className="text-sm text-gray-500">No appointments</p>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {appointments.map((a) => (
-              <div key={a.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {new Date(a.appointmentDateTime).toLocaleDateString()} {new Date(a.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                  <p className="text-xs text-gray-500">Doctor: {doctorMap[a.doctorId] || a.doctorId}</p>
-                  <p className="text-xs text-gray-500">{a.reason}</p>
-                </div>
-                <Badge variant={a.status} />
-              </div>
-            ))}
-          </div>
-        )}
+      <Card style={{ marginBottom: 16 }}>
+        <Descriptions column={{ xs: 1, sm: 3 }}>
+          <Descriptions.Item label="Email">{patient.email}</Descriptions.Item>
+          <Descriptions.Item label="Phone">{patient.phone || '-'}</Descriptions.Item>
+          <Descriptions.Item label="Address">{patient.address}</Descriptions.Item>
+        </Descriptions>
       </Card>
 
-      <Card title={`Consultation History (${consultations.length})`}>
-        {consultations.length === 0 ? (
-          <p className="text-sm text-gray-500">No consultations</p>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {consultations.map((c) => (
-              <div key={c.id} className="py-3">
-                <p className="text-xs text-gray-500">{new Date(c.createdDate).toLocaleDateString()} &middot; Doctor: {doctorMap[c.doctorId] || c.doctorId}</p>
-                <p className="mt-1 text-sm font-medium">Symptoms: {c.symptoms}</p>
-                {c.diagnosis && <p className="text-sm text-gray-700">Diagnosis: {c.diagnosis}</p>}
-                {c.notes && <p className="text-sm text-gray-500">Notes: {c.notes}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card title={`Medical Images (${images.length})`}>
-        {images.length === 0 ? (
-          <p className="text-sm text-gray-500">No images</p>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {images.map((img) => (
-              <div key={img.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{img.fileName}</p>
-                  <p className="text-xs text-gray-500">
-                    {img.imageType} &middot; {new Date(img.uploadedDate).toLocaleDateString()}
-                  </p>
-                </div>
-                <a
-                  href={getImageUrl(img.id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  View
-                </a>
-              </div>
-            ))}
-          </div>
-        )}
+      <Card>
+        <Tabs items={tabItems} />
       </Card>
     </div>
   )

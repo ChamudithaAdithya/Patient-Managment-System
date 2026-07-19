@@ -1,13 +1,18 @@
 import { Outlet } from 'react-router-dom'
+import { Layout } from 'antd'
 import { Sidebar } from './Sidebar'
+
+const { Content } = Layout
 
 export function AppLayout() {
   return (
-    <div className="flex h-screen">
+    <Layout className="site-layout">
       <Sidebar />
-      <main className="flex-1 overflow-auto bg-gray-50 p-6">
-        <Outlet />
-      </main>
-    </div>
+      <Layout>
+        <Content style={{ margin: 24, minHeight: 280 }}>
+          <Outlet />
+        </Content>
+      </Layout>
+    </Layout>
   )
 }
