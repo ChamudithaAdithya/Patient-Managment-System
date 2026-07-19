@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+const GATEWAY = import.meta.env.VITE_API_GATEWAY || (import.meta.env.DEV ? 'http://127.0.0.1:8083' : '')
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_GATEWAY || 'http://localhost:8083/api',
+  baseURL: `${GATEWAY}/api`,
 })
 
 api.interceptors.request.use((config) => {

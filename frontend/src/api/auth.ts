@@ -1,7 +1,8 @@
 import axios from 'axios'
 import type { LoginRequest, LoginResponse, RegisterRequest } from '../types/auth'
 
-const BASE = import.meta.env.VITE_AUTH_GATEWAY || '/api/auth'
+const GATEWAY = import.meta.env.VITE_API_GATEWAY || (import.meta.env.DEV ? 'http://127.0.0.1:8083' : '')
+const BASE = `${GATEWAY}/api/auth`
 
 export const login = (data: LoginRequest) =>
   axios.post<LoginResponse>(`${BASE}/login`, data).then((r) => r.data)
