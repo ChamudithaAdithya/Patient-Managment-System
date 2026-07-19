@@ -66,4 +66,6 @@ spring:
         - id: auth-service-route
           uri: http://auth-service:4005
           predicates:
-            - Path=/login,/register,/admin/**
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=2
