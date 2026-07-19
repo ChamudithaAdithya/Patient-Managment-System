@@ -75,6 +75,7 @@ public class PatientServiceImpl implements PatientService {
         patient.setAddress(patientRequestDTO.getAddress());
         patient.setEmail(patientRequestDTO.getEmail());
         patient.setDateOfBirth(LocalDate.parse(patientRequestDTO.getDateOfBirth()));
+        patient.setPhone(patientRequestDTO.getPhone());
         Patient updatedPatient = patientRepository.save(patient);
         return PatientMapper.toDTO(updatedPatient);
     }

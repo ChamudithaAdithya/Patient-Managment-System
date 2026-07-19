@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Table, Tag, Button, Space, Card, Typography, Popconfirm, message } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Table, Tag, Button, Space, Card, Typography, Popconfirm, message, Input } from 'antd'
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { getAll, remove } from '../../api/patients'
 import type { Patient } from '../../types/patient'
 
@@ -11,6 +11,7 @@ export default function PatientList() {
   const navigate = useNavigate()
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
 
   const load = () => {
     setLoading(true)
@@ -31,6 +32,16 @@ export default function PatientList() {
     }
   }
 
+  const filtered = patients.filter((p) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q) ||
+      (p.phone || '').includes(q)
+    )
+  })
+
   const columns = [
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
@@ -47,7 +58,7 @@ export default function PatientList() {
       title: '',
       key: 'actions',
       render: (_: unknown, p: Patient) => (
-        <Space>
+        <Space onClick={(e) => e.stopPropagation()}>
           <Button type="link" onClick={() => navigate(`/patients/${p.id}`)}>Edit</Button>
           <Popconfirm
             title="Delete this patient?"
@@ -64,18 +75,25 @@ export default function PatientList() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Title level={4} style={{ margin: 0 }}>Patients</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/patients/new')}>New Patient</Button>
+        <Space>
+          <Input
+            placeholder="Search patients..."
+            prefix={<SearchOutlined />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ width: 240 }}
+            allowClear
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/patients/new')}>New Patient</Button>
+        </Space>
       </div>
       <Card>
         <Table
           columns={columns}
-          dataSource={patients}
+          dataSource={filtered}
           rowKey="id"
           loading={loading}
-          onRow={(p) => ({
-            onClick: () => navigate(`/patients/${p.id}`),
-            style: { cursor: 'pointer' },
-          })}
+          locale={{ emptyText: 'No patients found.' }}
         />
       </Card>
     </div>

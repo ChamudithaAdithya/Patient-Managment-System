@@ -148,6 +148,20 @@ services:
     volumes:
       - medical-images:/app/images
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    image: chamudithaadithya/patient_management_system:frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-getway
+    networks:
+      - internal-net
+
 volumes:
   medical-images:
 

@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getById, cancel, getConsultationByAppointment, createConsultation } from '../../api/appointments'
+import {
+  getById, cancel, getConsultationByAppointment, createConsultation,
+} from '../../api/appointments'
 import { getById as getDoctorById } from '../../api/doctors'
+import { getById as getPatientById } from '../../api/patients'
 import { uploadImage, getPatientImages, getImageUrl } from '../../api/images'
-import { Descriptions, Card, Tag, Button, Typography, Spin, message, Modal, Select, Upload, Tabs, Input, Form } from 'antd'
-import { UploadOutlined } from '@ant-design/icons'
+import {
+  Descriptions, Card, Tag, Button, Typography, Spin, message, Modal,
+  Select, Upload, Input, Form, Row, Col, Divider, Empty, Image,
+} from 'antd'
+import { UploadOutlined, UserOutlined, CalendarOutlined } from '@ant-design/icons'
 import type { Appointment } from '../../types/appointment'
 import type { Doctor } from '../../types/doctor'
+import type { Patient } from '../../types/patient'
 import type { Consultation } from '../../types/consultation'
 import type { MedicalImage, ImageType } from '../../types/image'
 import { useAuth } from '../../hooks/useAuth'
@@ -25,6 +32,7 @@ export default function AppointmentDetail() {
   const navigate = useNavigate()
   const { hasRole } = useAuth()
   const [appointment, setAppointment] = useState<Appointment | null>(null)
+  const [patient, setPatient] = useState<Patient | null>(null)
   const [consultation, setConsultation] = useState<Consultation | null>(null)
   const [doctorName, setDoctorName] = useState('')
   const [loading, setLoading] = useState(true)
@@ -43,7 +51,10 @@ export default function AppointmentDetail() {
     getById(id)
       .then((a) => {
         setAppointment(a)
+
         getDoctorById(a.doctorId).then((d: Doctor) => setDoctorName(d.name)).catch(() => {})
+        getPatientById(a.patientId).then(setPatient).catch(() => {})
+
         if (a.status === 'COMPLETED') {
           getConsultationByAppointment(id).then(setConsultation).catch(() => {})
         }
@@ -118,86 +129,119 @@ export default function AppointmentDetail() {
     return <Text>Appointment not found</Text>
   }
 
-  const tabItems = [
-    {
-      key: 'images',
-      label: `Medical Images (${images.length})`,
-      children: (
-        <>
-          <div style={{ marginBottom: 16 }}>
-            {images.length === 0 ? (
-              <Text type="secondary">No images</Text>
-            ) : (
-              <Tabs
-                items={images.map((img) => ({
-                  key: img.id,
-                  label: img.fileName,
-                  children: (
-                    <div>
-                      <img src={getImageUrl(img.id)} alt={img.fileName} style={{ maxWidth: '100%', maxHeight: 400 }} />
-                      <p style={{ marginTop: 8 }}>
-                        <Text type="secondary">{img.imageType} · {new Date(img.uploadedDate).toLocaleDateString()}</Text>
-                      </p>
-                    </div>
-                  ),
-                }))}
-              />
-            )}
-          </div>
-          {hasRole('DOCTOR', 'ADMIN', 'SUPER_ADMIN') && (
-            <Button icon={<UploadOutlined />} onClick={() => setShowImageModal(true)}>Upload Medical Image</Button>
-          )}
-        </>
-      ),
-    },
-  ]
-
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+    <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Title level={4} style={{ margin: 0 }}>Appointment</Title>
-        <Tag color={statusColors[appointment.status]}>{appointment.status}</Tag>
+        <Tag color={statusColors[appointment.status]} style={{ fontSize: 14, padding: '4px 12px' }}>
+          {appointment.status}
+        </Tag>
       </div>
 
-      <Card style={{ marginBottom: 16 }}>
-        <Descriptions column={1}>
-          <Descriptions.Item label="Patient ID"><code>{appointment.patientId}</code></Descriptions.Item>
-          <Descriptions.Item label="Doctor">{doctorName || appointment.doctorId}</Descriptions.Item>
-          <Descriptions.Item label="Date & Time">
-            {new Date(appointment.appointmentDateTime).toLocaleDateString(undefined, {
-              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-            })}
-            {' at '}
-            {new Date(appointment.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Descriptions.Item>
-          <Descriptions.Item label="Reason">{appointment.reason}</Descriptions.Item>
-        </Descriptions>
-      </Card>
+      <Row gutter={24}>
+        {/* ── Left Column: Patient Profile + Appointment Details ── */}
+        <Col xs={24} md={12}>
+          {/* Patient Profile */}
+          <Card title={<><UserOutlined /> Patient Profile</>} style={{ marginBottom: 16 }}>
+            {patient ? (
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Name">{patient.name}</Descriptions.Item>
+                <Descriptions.Item label="Email">{patient.email}</Descriptions.Item>
+                <Descriptions.Item label="Phone">{patient.phone || '-'}</Descriptions.Item>
+                <Descriptions.Item label="Address">{patient.address}</Descriptions.Item>
+                <Descriptions.Item label="DOB">{patient.dateOfBirth}</Descriptions.Item>
+                <Descriptions.Item label="Registered">{patient.registeredDate}</Descriptions.Item>
+              </Descriptions>
+            ) : (
+              <Text type="secondary">Could not load patient details</Text>
+            )}
+          </Card>
 
-      {consultation && (
-        <Card title="Consultation" style={{ marginBottom: 16 }}>
-          <Descriptions column={1}>
-            <Descriptions.Item label="Symptoms">{consultation.symptoms}</Descriptions.Item>
-            {consultation.diagnosis && <Descriptions.Item label="Diagnosis">{consultation.diagnosis}</Descriptions.Item>}
-            {consultation.notes && <Descriptions.Item label="Notes">{consultation.notes}</Descriptions.Item>}
-          </Descriptions>
-        </Card>
-      )}
+          {/* Appointment Details */}
+          <Card title={<><CalendarOutlined /> Appointment Details</>} style={{ marginBottom: 16 }}>
+            <Descriptions column={1} size="small">
+              <Descriptions.Item label="Doctor">{doctorName || appointment.doctorId}</Descriptions.Item>
+              <Descriptions.Item label="Date & Time">
+                {new Date(appointment.appointmentDateTime).toLocaleDateString(undefined, {
+                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                })}
+                {' at '}
+                {new Date(appointment.appointmentDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Descriptions.Item>
+              <Descriptions.Item label="Reason">{appointment.reason}</Descriptions.Item>
+            </Descriptions>
+          </Card>
 
-      <Card style={{ marginBottom: 16 }}>
-        <Tabs items={tabItems} />
-      </Card>
+          {/* Consultation */}
+          {consultation && (
+            <Card title="Consultation" style={{ marginBottom: 16 }}>
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Symptoms">{consultation.symptoms}</Descriptions.Item>
+                {consultation.diagnosis && <Descriptions.Item label="Diagnosis">{consultation.diagnosis}</Descriptions.Item>}
+                {consultation.notes && <Descriptions.Item label="Notes">{consultation.notes}</Descriptions.Item>}
+              </Descriptions>
+            </Card>
+          )}
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        {appointment.status === 'SCHEDULED' && (
-          <>
-            <Button type="primary" onClick={() => setShowConsultForm(true)}>Create Consultation</Button>
-            <Button danger onClick={handleCancel} loading={actionLoading}>Cancel Appointment</Button>
-          </>
-        )}
-        <Button onClick={() => navigate('/appointments')}>Back</Button>
-      </div>
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {appointment.status === 'SCHEDULED' && (
+              <>
+                <Button type="primary" onClick={() => setShowConsultForm(true)}>Create Consultation</Button>
+                <Button danger onClick={handleCancel} loading={actionLoading}>Cancel Appointment</Button>
+              </>
+            )}
+            <Button onClick={() => navigate('/appointments')}>Back</Button>
+          </div>
+        </Col>
 
+        {/* ── Right Column: Medical Images ── */}
+        <Col xs={24} md={12}>
+          <Card
+            title={`Medical Images (${images.length})`}
+            extra={
+              hasRole('DOCTOR', 'ADMIN', 'SUPER_ADMIN') && (
+                <Button icon={<UploadOutlined />} size="small" onClick={() => setShowImageModal(true)}>
+                  Upload
+                </Button>
+              )
+            }
+          >
+            {images.length === 0 ? (
+              <Empty description="No medical images uploaded" />
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                {images.map((img) => (
+                  <Card
+                    key={img.id}
+                    size="small"
+                    style={{ width: 200 }}
+                    cover={
+                      <Image
+                        alt={img.fileName}
+                        src={getImageUrl(img.id)}
+                        style={{ height: 160, objectFit: 'cover' }}
+                        preview={{ mask: 'View' }}
+                      />
+                    }
+                  >
+                    <Card.Meta
+                      title={img.fileName}
+                      description={
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {img.imageType} · {new Date(img.uploadedDate).toLocaleDateString()}
+                        </Text>
+                      }
+                    />
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* ── Modals ── */}
       <Modal
         title="Create Consultation"
         open={showConsultForm}
