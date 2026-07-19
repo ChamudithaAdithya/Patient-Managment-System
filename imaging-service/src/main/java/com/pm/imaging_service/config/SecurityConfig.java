@@ -29,7 +29,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.POST, "/images/upload").hasAnyRole("SUPER_ADMIN", "ADMIN", "DOCTOR")
                         .requestMatchers(HttpMethod.GET, "/images/patient/*").hasAnyRole("SUPER_ADMIN", "ADMIN", "DOCTOR", "PATIENT", "STAFF")
-                        .requestMatchers(HttpMethod.GET, "/images/*").hasAnyRole("SUPER_ADMIN", "ADMIN", "DOCTOR", "PATIENT", "STAFF")
+                        .requestMatchers(HttpMethod.GET, "/images/*").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/images/*").hasAnyRole("SUPER_ADMIN", "ADMIN")
                         .anyRequest().authenticated()
                 )
