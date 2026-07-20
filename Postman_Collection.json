@@ -1,0 +1,1062 @@
+{
+  "info": {
+    "name": "Patient Management System — Full API",
+    "description": "Complete REST API collection for the Patient Management System. All endpoints route through the API Gateway at localhost:4004. Authentication is handled via JWT — use the Login request to get a token, which is automatically injected into all subsequent requests.\n\nCharacters used in test data:\n  👑 Chamuditha — SUPER_ADMIN (seeded)\n  👤 Sanduni   — ADMIN\n  🏥 Kasuni    — STAFF (receptionist)\n  🩺 Dr. Lakmal & Dr. Nethmi — DOCTORs\n  👩‍🦰 Tharushi  — PATIENT\n\nBase URL: {{base_url}}",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4004/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_base",
+      "value": "http://localhost:4005",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "doctor_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patient_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "patient_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "doctor_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "consultation_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "image_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "target_date",
+      "value": "2026-07-22",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 AUTH & ADMIN",
+      "item": [
+        {
+          "name": "1a. SUPER_ADMIN Login (Chamuditha)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('admin_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"chamuditha@hospital.com\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_base}}/login",
+              "host": ["{{auth_base}}"],
+              "path": ["login"]
+            },
+            "description": "Seeded SUPER_ADMIN. Stores token in {{token}} and {{admin_token}} for all subsequent requests."
+          }
+        },
+        {
+          "name": "1b. Register as PATIENT (Tharushi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('patient_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tharushi Jayawardena\",\n  \"email\": \"tharushi.j@email.com\",\n  \"password\": \"pass1234\",\n  \"role\": \"PATIENT\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_base}}/register",
+              "host": ["{{auth_base}}"],
+              "path": ["register"]
+            },
+            "description": "Public registration — any user can create a PATIENT or DOCTOR account."
+          }
+        },
+        {
+          "name": "1c. Register as DOCTOR (Dr. Lakmal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('doctor_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Lakmal Fernando\",\n  \"email\": \"lakmal.fernando@hospital.com\",\n  \"password\": \"docpass123\",\n  \"role\": \"DOCTOR\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_base}}/register",
+              "host": ["{{auth_base}}"],
+              "path": ["register"]
+            },
+            "description": "Register a doctor account (separate from the Doctor profile created via /doctors endpoint)."
+          }
+        },
+        {
+          "name": "2a. Login as ADMIN (Sanduni)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('admin_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sanduni@hospital.com\",\n  \"password\": \"adminpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_base}}/login",
+              "host": ["{{auth_base}}"],
+              "path": ["login"]
+            },
+            "description": "Login as ADMIN (created by SUPER_ADMIN in step 3a). Token stored in {{token}} and {{admin_token}}."
+          }
+        },
+        {
+          "name": "2b. Login as STAFF (Kasuni)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('staff_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"kasuni.perera@hospital.com\",\n  \"password\": \"staffpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_base}}/login",
+              "host": ["{{auth_base}}"],
+              "path": ["login"]
+            },
+            "description": "Login as STAFF (created by ADMIN in step 3c). Token stored in {{token}} and {{staff_token}}."
+          }
+        },
+        {
+          "name": "2c. Login as PATIENT (Tharushi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('patient_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tharushi.j@email.com\",\n  \"password\": \"pass1234\"\n}"
+            },
+            "url": {
+              "raw": "{{auth_base}}/login",
+              "host": ["{{auth_base}}"],
+              "path": ["login"]
+            },
+            "description": "Login as PATIENT (registered in step 1b). Token stored in {{token}} and {{patient_token}}."
+          }
+        },
+        {
+          "name": "3a. [SUPER_ADMIN] Create ADMIN (Sanduni)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sanduni Wijesinghe\",\n  \"email\": \"sanduni@hospital.com\",\n  \"password\": \"adminpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/admin/create",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "admin", "create"]
+            },
+            "description": "SUPER_ADMIN only. Creates a new ADMIN user who can manage doctors and staff."
+          }
+        },
+        {
+          "name": "3b. [SUPER_ADMIN] List All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "admin", "users"]
+            },
+            "description": "SUPER_ADMIN only. Returns all users with their roles and active status."
+          }
+        },
+        {
+          "name": "3c. [ADMIN] Create STAFF (Kasuni)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kasuni Perera\",\n  \"email\": \"kasuni.perera@hospital.com\",\n  \"password\": \"staffpass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/admin/staff",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "admin", "staff"]
+            },
+            "description": "ADMIN or SUPER_ADMIN. Creates a STAFF user (receptionist/front desk)."
+          }
+        },
+        {
+          "name": "3d. [ADMIN] List All Staff",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/admin/staff",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "admin", "staff"]
+            },
+            "description": "ADMIN or SUPER_ADMIN. Returns all STAFF users."
+          }
+        },
+        {
+          "name": "3e. [SUPER_ADMIN] Deactivate Admin",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/admin/{{staff_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "admin", "{{staff_id}}"]
+            },
+            "description": "SUPER_ADMIN only. Soft-deletes (deactivates) an admin user by ID."
+          }
+        },
+        {
+          "name": "3f. [ADMIN] Deactivate Staff",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/admin/staff/{{staff_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "admin", "staff", "{{staff_id}}"]
+            },
+            "description": "ADMIN or SUPER_ADMIN. Soft-deletes (deactivates) a staff member."
+          }
+        }
+      ]
+    },
+    {
+      "name": "👨‍⚕️ DOCTORS",
+      "item": [
+        {
+          "name": "4a. [ADMIN] Create Doctor (Dr. Lakmal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('doctor_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Lakmal Fernando\",\n  \"email\": \"lakmal.fernando@hospital.com\",\n  \"phone\": \"+94771234567\",\n  \"specialization\": \"Cardiology\",\n  \"department\": \"Cardiology Dept\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/doctors",
+              "host": ["{{base_url}}"],
+              "path": ["doctors"]
+            },
+            "description": "ADMIN or SUPER_ADMIN. Creates a doctor profile in the system. Stores the returned ID in {{doctor_id}}."
+          }
+        },
+        {
+          "name": "4b. [ADMIN] Create Doctor (Dr. Nethmi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('doctor_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Nethmi Rathnayake\",\n  \"email\": \"nethmi.r@hospital.com\",\n  \"phone\": \"+94779876543\",\n  \"specialization\": \"Neurology\",\n  \"department\": \"Neurology Dept\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/doctors",
+              "host": ["{{base_url}}"],
+              "path": ["doctors"]
+            },
+            "description": "Second doctor for variety. Stores the returned ID in {{doctor_id}}."
+          }
+        },
+        {
+          "name": "4c. List All Doctors",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctors",
+              "host": ["{{base_url}}"],
+              "path": ["doctors"]
+            },
+            "description": "All authenticated roles can list doctors."
+          }
+        },
+        {
+          "name": "4d. Get Doctor by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctors/{{doctor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["doctors", "{{doctor_id}}"]
+            },
+            "description": "All authenticated roles can view a specific doctor."
+          }
+        },
+        {
+          "name": "4e. [ADMIN] Update Doctor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Lakmal Fernando\",\n  \"email\": \"lakmal.fernando@hospital.com\",\n  \"phone\": \"+94771234567\",\n  \"specialization\": \"Interventional Cardiology\",\n  \"department\": \"Cardiology Dept\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/doctors/{{doctor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["doctors", "{{doctor_id}}"]
+            },
+            "description": "ADMIN or SUPER_ADMIN. Updates doctor specialization/department."
+          }
+        },
+        {
+          "name": "4f. [ADMIN] Delete Doctor",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctors/{{doctor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["doctors", "{{doctor_id}}"]
+            },
+            "description": "ADMIN or SUPER_ADMIN. Hard-deletes a doctor from the system."
+          }
+        }
+      ]
+    },
+    {
+      "name": "👩‍⚕️ PATIENTS",
+      "item": [
+        {
+          "name": "5a. [STAFF] Create Patient (Tharushi Jayawardena)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('patient_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tharushi Jayawardena\",\n  \"email\": \"tharushi.j@email.com\",\n  \"phone\": \"+94-11-2345678\",\n  \"address\": \"42 Galle Road, Colombo 03\",\n  \"dateOfBirth\": \"1998-06-12\",\n  \"registeredDate\": \"2026-07-20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients",
+              "host": ["{{base_url}}"],
+              "path": ["patients"]
+            },
+            "description": "STAFF, ADMIN, or DOCTOR can create patients. Triggers gRPC call to billing-service + Kafka event to analytics-service. Stores returned ID in {{patient_id}}."
+          }
+        },
+        {
+          "name": "5b. [STAFF] Create Patient (Sahan Viduranga)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('patient_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sahan Viduranga\",\n  \"email\": \"sahan.v@email.com\",\n  \"phone\": \"+94-77-8765432\",\n  \"address\": \"15 Kandy Road, Peradeniya\",\n  \"dateOfBirth\": \"2000-11-25\",\n  \"registeredDate\": \"2026-07-20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients",
+              "host": ["{{base_url}}"],
+              "path": ["patients"]
+            },
+            "description": "Second patient for more realistic testing."
+          }
+        },
+        {
+          "name": "5c. List All Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patients",
+              "host": ["{{base_url}}"],
+              "path": ["patients"]
+            },
+            "description": "ADMIN, DOCTOR, and STAFF can list all patients."
+          }
+        },
+        {
+          "name": "5d. Get Patient by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}"]
+            },
+            "description": "Retrieve full patient profile including status."
+          }
+        },
+        {
+          "name": "5e. [ADMIN] Update Patient",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tharushi Jayawardena\",\n  \"email\": \"tharushi.j@email.com\",\n  \"phone\": \"+94-11-2345678\",\n  \"address\": \"55 Marine Drive, Colombo 04\",\n  \"dateOfBirth\": \"1998-06-12\",\n  \"registeredDate\": \"2026-07-20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}"]
+            },
+            "description": "ADMIN or DOCTOR can update patient details."
+          }
+        },
+        {
+          "name": "5f. [ADMIN] Delete Patient (Soft-delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["patients", "{{patient_id}}"]
+            },
+            "description": "ADMIN only. Soft-deletes patient (status → INACTIVE)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 APPOINTMENTS",
+      "item": [
+        {
+          "name": "6a. Get Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/doctor/{{doctor_id}}/available?date={{target_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "doctor", "{{doctor_id}}", "available"],
+              "query": [
+                { "key": "date", "value": "{{target_date}}" }
+              ]
+            },
+            "description": "All authenticated roles. Returns array of ISO datetime strings for free 30-min slots."
+          }
+        },
+        {
+          "name": "6b. [STAFF] Create Appointment (Tharushi → Dr. Lakmal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('appointment_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patient_id}}\",\n  \"doctorId\": \"{{doctor_id}}\",\n  \"appointmentDateTime\": \"2026-07-22T09:30:00\",\n  \"reason\": \"Chest pain and shortness of breath\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "STAFF, ADMIN, DOCTOR, or PATIENT can create appointments. Status defaults to SCHEDULED. Publishes AppointmentEvent to Kafka."
+          }
+        },
+        {
+          "name": "6c. [STAFF] Create Appointment (Sahan → Dr. Nethmi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patient_id}}\",\n  \"doctorId\": \"{{doctor_id}}\",\n  \"appointmentDateTime\": \"2026-07-22T14:00:00\",\n  \"reason\": \"Severe headaches for past week\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "Second appointment for testing."
+          }
+        },
+        {
+          "name": "6d. List All Appointments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "ADMIN, DOCTOR, and STAFF can list all appointments."
+          }
+        },
+        {
+          "name": "6e. Get Appointments by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/patient/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "patient", "{{patient_id}}"]
+            },
+            "description": "Returns all appointments for a specific patient."
+          }
+        },
+        {
+          "name": "6f. Get Appointments by Doctor",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/doctor/{{doctor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "doctor", "{{doctor_id}}"]
+            },
+            "description": "Returns all appointments for a specific doctor."
+          }
+        },
+        {
+          "name": "6g. Get Appointment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}"]
+            },
+            "description": "View full appointment details."
+          }
+        },
+        {
+          "name": "6h. [ADMIN] Cancel Appointment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}", "cancel"]
+            },
+            "description": "ADMIN, DOCTOR, PATIENT (own), or STAFF can cancel. Status → CANCELLED."
+          }
+        },
+        {
+          "name": "6i. [DOCTOR] Complete Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    console.log('Appointment completed:', json.status);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointments/{{appointment_id}}/complete",
+              "host": ["{{base_url}}"],
+              "path": ["appointments", "{{appointment_id}}", "complete"]
+            },
+            "description": "ADMIN or DOCTOR only. Status → COMPLETED. Must be called before creating a consultation."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 CONSULTATIONS",
+      "item": [
+        {
+          "name": "7a. [DOCTOR] Create Consultation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('consultation_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"patientId\": \"{{patient_id}}\",\n  \"symptoms\": \"Chest pain for 2 weeks, worsens with exertion. Shortness of breath during stairs.\",\n  \"diagnosis\": \"Stable angina — suspected coronary artery disease\",\n  \"notes\": \"Patient advised lifestyle changes, low-sodium diet. Prescribed nitroglycerin 0.5mg SL as needed. Follow-up in 2 weeks with ECG.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/consultations",
+              "host": ["{{base_url}}"],
+              "path": ["consultations"]
+            },
+            "description": "ADMIN or DOCTOR only. Creates consultation record for a completed appointment. Stores returned ID."
+          }
+        },
+        {
+          "name": "7b. Get Consultation by Appointment",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/consultations/appointment/{{appointment_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["consultations", "appointment", "{{appointment_id}}"]
+            },
+            "description": "ADMIN, DOCTOR, or STAFF. Retrieve the consultation linked to an appointment."
+          }
+        },
+        {
+          "name": "7c. Get Consultations by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/consultations/patient/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["consultations", "patient", "{{patient_id}}"]
+            },
+            "description": "Returns full consultation history for a patient (symptoms, diagnosis, notes, dates)."
+          }
+        },
+        {
+          "name": "7d. Get Consultation by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/consultations/{{consultation_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["consultations", "{{consultation_id}}"]
+            },
+            "description": "ADMIN, DOCTOR only. Get single consultation record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🖼️ MEDICAL IMAGES",
+      "item": [
+        {
+          "name": "8a. [DOCTOR] Upload X-Ray",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('image_id', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "", "description": "Select an image file (PNG, JPG, or PDF)" },
+                { "key": "patientId", "value": "{{patient_id}}", "type": "text" },
+                { "key": "imageType", "value": "XRAY", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/images/upload",
+              "host": ["{{base_url}}"],
+              "path": ["images", "upload"]
+            },
+            "description": "ADMIN or DOCTOR only. Upload multipart: file + patientId + imageType (XRAY|MRI|CT|ULTRASOUND|OTHER)."
+          }
+        },
+        {
+          "name": "8b. [DOCTOR] Upload MRI",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctor_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "", "description": "Select an MRI image file" },
+                { "key": "patientId", "value": "{{patient_id}}", "type": "text" },
+                { "key": "imageType", "value": "MRI", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/images/upload",
+              "host": ["{{base_url}}"],
+              "path": ["images", "upload"]
+            },
+            "description": "Upload an MRI scan for the same patient."
+          }
+        },
+        {
+          "name": "8c. List Images by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{staff_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/images/patient/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["images", "patient", "{{patient_id}}"]
+            },
+            "description": "All authenticated roles. Returns metadata for all images linked to a patient."
+          }
+        },
+        {
+          "name": "8d. View/Download Image (Public)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/images/{{image_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["images", "{{image_id}}"]
+            },
+            "description": "Public endpoint (no auth required). Returns the raw image file. Opens in browser or downloads."
+          }
+        },
+        {
+          "name": "8e. [ADMIN] Delete Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/images/{{image_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["images", "{{image_id}}"]
+            },
+            "description": "ADMIN or SUPER_ADMIN only. Deletes image record and file."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔀 END-TO-END SCENARIOS",
+      "item": [
+        {
+          "name": "🎬 Scenario A: Patient Books Online & Doctor Consults",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patient_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"step\": \"1. PATIENT logs in → token in {{patient_token}}\",\n    \"action\": \"POST /login — already done in step 2c\"\n  },\n  {\n    \"step\": \"2. PATIENT lists doctors\",\n    \"action\": \"GET /doctors\"\n  },\n  {\n    \"step\": \"3. PATIENT checks slots\",\n    \"action\": \"GET /appointments/doctor/{id}/available?date=2026-07-22\"\n  },\n  {\n    \"step\": \"4. PATIENT books appointment\",\n    \"action\": \"POST /appointments\",\n    \"body\": {\n      \"doctorId\": \"{{doctor_id}}\",\n      \"patientId\": \"{{patient_id}}\",\n      \"appointmentDateTime\": \"2026-07-22T10:00:00\",\n      \"reason\": \"Chest discomfort\"\n    }\n  },\n  {\n    \"step\": \"5. DOCTOR logs in → token in {{doctor_token}}\",\n    \"action\": \"POST /login — already done in step 2a or 2b\"\n  },\n  {\n    \"step\": \"6. DOCTOR views appointments\",\n    \"action\": \"GET /appointments/doctor/{id}\"\n  },\n  {\n    \"step\": \"7. DOCTOR completes appointment\",\n    \"action\": \"PUT /appointments/{id}/complete\"\n  },\n  {\n    \"step\": \"8. DOCTOR creates consultation\",\n    \"action\": \"POST /consultations\"\n  },\n  {\n    \"step\": \"9. DOCTOR uploads X-ray\",\n    \"action\": \"POST /images/upload (multipart)\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["appointments"]
+            },
+            "description": "Run the requests in order: 1-9. This covers the full lifecycle from patient self-service booking through doctor consultation and imaging."
+          }
+        }
+      ],
+      "description": "Pre-built sequences that walk through complete workflows step by step."
+    }
+  ]
+}

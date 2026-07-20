@@ -12,4 +12,5 @@ export const uploadImage = (patientId: string, file: File, imageType: ImageType)
 export const getPatientImages = (patientId: string) =>
   api.get<MedicalImage[]>(`/images/patient/${patientId}`).then((r) => r.data)
 
-export const getImageUrl = (id: string) => `/api/images/${id}`
+const GATEWAY = import.meta.env.VITE_API_GATEWAY || (import.meta.env.DEV ? 'http://127.0.0.1:8083' : '')
+export const getImageUrl = (id: string) => `${GATEWAY}/api/images/${id}`

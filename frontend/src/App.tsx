@@ -17,6 +17,7 @@ import DoctorDetail from './pages/doctors/DoctorDetail'
 import DoctorSchedule from './pages/doctors/DoctorSchedule'
 import AdminUsers from './pages/admin/AdminUsers'
 import StaffList from './pages/admin/StaffList'
+import Analytics from './pages/Analytics'
 
 export default function App() {
   return (
@@ -48,6 +49,9 @@ export default function App() {
               </Route>
               <Route path="/admin/staff" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN']} />}>
                   <Route index element={<StaffList />} />
+              </Route>
+              <Route path="/analytics" element={<ProtectedRoute roles={['SUPER_ADMIN', 'ADMIN', 'DOCTOR', 'STAFF']} />}>
+                  <Route index element={<Analytics />} />
               </Route>
             </Route>
           </Route>

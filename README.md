@@ -1,111 +1,118 @@
 # Patient Management System
 
-Cloud-based hospital management system with 5 microservices (Spring Boot 21, Kafka, gRPC, PostgreSQL).
+Cloud-based hospital management system with 7 microservices (Spring Boot 21, Kafka, gRPC, PostgreSQL), React frontend, and AWS deployment.
 
 ## Architecture
 
 ```
-┌──────────┐     ┌──────────────┐     ┌──────────────────┐
-│ Frontend │────→│ API Gateway  │────→│ patient-service  │──→ DB (Postgres)
-│ (React)  │     │ (port 4004)  │     │ (port 4000)      │
-└──────────┘     └──────────────┘     └──┬───────────────┘
-                                         │ gRPC
-                                         ↓
-┌──────────┐     ┌──────────────┐     ┌──────────────────┐
-│ Auth     │     │ Kafka        │     │ billing-service  │──→ DB
-│ (4005)   │     │ (9092)       │     │ (4001 / gRPC 9001)│
-└──────────┘     └──────┬───────┘     └──────────────────┘
-                        │
-                        ↓
-                 ┌──────────────────┐
-                 │ analytics-service│
-                 │ (port 4002)      │
-                 └──────────────────┘
+Browser ──→ S3 Static Hosting ──→ ALB ──→ EC2 (Docker)
+                                              │
+                                   ┌──────────┴──────────┐
+                                   │   API Gateway :4004  │
+                                   └──────┬──────┬───────┘
+                          ┌───────────────┤      ├────────────────┐
+                          ↓               ↓      ↓                ↓
+                   ┌──────────┐  ┌────────────┐ ┌──────────┐  ┌───────────┐
+                   │ Patient  │  │ Appointment│ │  Auth    │  │  Imaging  │
+                   │  :4000   │  │   :4006    │ │  :4005   │  │   :4007   │
+                   └──┬───┬───┘  └──────┬─────┘ └────┬─────┘  └─────┬─────┘
+                      │   │             │            │              │
+                      │   │ gRPC        │ Kafka      │              │
+                      ↓   ↓             ↓            │              │
+               ┌──────────┐  ┌──────────────┐        │              │
+               │ Billing  │  │  Analytics   │        │              │
+               │   :4001  │  │   :4002      │        │              │
+               └──────────┘  └──────────────┘        │              │
+                                                      ↓              ↓
+                                             ┌─────────────────────────┐
+                                             │   RDS PostgreSQL        │
+                                             │   pm-postgres:5432      │
+                                             └─────────────────────────┘
 ```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite, Ant Design 6, TypeScript, Recharts |
+| Backend | Spring Boot 3.5.x, Java 21, Maven |
+| Gateway | Spring Cloud Gateway |
+| Database | PostgreSQL 16 (AWS RDS db.t3.micro) |
+| Messaging | Apache Kafka 7.4.0, Zookeeper |
+| gRPC | Billing service (mock) |
+| Auth | JWT (HS256), 5 roles |
+| CI/CD | GitHub Actions (5 jobs) |
+| Cloud | AWS (EC2, RDS, S3, ALB, CloudFront) |
 
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Node.js](https://nodejs.org/) (for frontend)
-- [Git](https://git-scm.com/)
+- [Node.js 20+](https://nodejs.org/)
+- [Java 21+](https://adoptium.net/) (for local dev)
+- [AWS CLI](https://aws.amazon.com/cli/) (for deployment)
 
-## Quick Start
+## Quick Start (Local)
 
-### 1. Clone & environment check
+### 1. Clone & setup
 
 ```bash
 git clone <repo-url>
 cd patient-managment
-```
-
-### 2. Create Docker network
-
-All services communicate over `internal-net`:
-
-```bash
 docker network create internal-net
 ```
 
-### 3. Start Kafka
-
-Kafka runs in a separate compose file:
-
-```bash
-docker compose -f kafka-docker/docker-compose.yml up -d
-```
-
-Verify Kafka is ready:
-```bash
-docker logs kafka-docker-kafka-1 --tail 5
-```
-
-### 4. Build & start all services
+### 2. Start all services
 
 ```bash
 docker compose up -d --build
 ```
 
-This starts:
-| Service | Port | Description |
-|---------|------|-------------|
-| **db** | 5000 | PostgreSQL (patient data) |
-| **db_auth** | 5002 | PostgreSQL (auth data) |
-| **billing-service** | 4001 / 9001 (gRPC) | Billing (hardcoded stub) |
-| **patient-service** | 4000 (internal) | Patient CRUD REST API |
-| **analytics-service** | 4002 | Kafka consumer (logs events) |
-| **api-getway** | 4004 | API Gateway |
-| **auth-service** | 4005 | JWT login |
+Wait ~60 seconds for initialization.
 
-Wait ~30 seconds for services to initialize, then verify:
+### 3. Verify
 
 ```bash
 docker compose ps
 ```
 
-Expected: all services show `Up` or `Up (healthy)`.
+All 10 containers should show `Up`:
 
-### 5. Verify the APIs
+| Container | Port | Purpose |
+|-----------|------|---------|
+| auth-service | 4005 | JWT authentication |
+| patient-service | 4000 (internal) | Patient CRUD |
+| appointment-service | 4006 | Appointments, doctors, consultations |
+| imaging-service | 4007 | Medical image upload |
+| billing-service | 4001 / 9001 (gRPC) | Billing (mock) |
+| analytics-service | 4002 | Kafka consumer |
+| api-getway | 4004 | API Gateway |
+| frontend | 5173 | React SPA |
+| patient-kafka | 9092 | Event bus |
+| patient-zookeeper | 2181 | Kafka coordination |
+
+### 4. Login & test
 
 ```bash
-# Login (get a JWT token)
-curl -X POST http://localhost:4005/login \
+# Login via gateway
+curl -X POST http://localhost:4004/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@pm.com","password":"admin"}'
+  -d '{"email":"chamuditha@hospital.com","password":"Admin@123"}'
 
-# Create patient (via API Gateway)
+# Create patient
 curl -X POST http://localhost:4004/api/patients \
   -H "Content-Type: application/json" \
-  -d '{"firstName":"John","lastName":"Doe","email":"john@example.com"}'
+  -H "Authorization: Bearer <token>" \
+  -d '{"name":"John Doe","email":"john@test.com","address":"123 Main St","dateOfBirth":"1990-01-01","registeredDate":"2026-01-01"}'
 
-# Get all patients
-curl http://localhost:4004/api/patients
+# Get all doctors
+curl http://localhost:4004/api/doctors
 
-# Swagger docs
-# http://localhost:4000/swagger-ui.html  (patient-service)
-# http://localhost:4005/swagger-ui.html  (auth-service)
+# Swagger
+# http://localhost:4004/api-docs/patients   (patient-service)
+# http://localhost:4005/swagger-ui.html      (auth-service)
 ```
 
-### 6. Start frontend (optional)
+### 5. Frontend (local dev)
 
 ```bash
 cd frontend
@@ -113,101 +120,93 @@ npm install
 npm run dev
 ```
 
-Frontend runs at `http://localhost:5173`.
+Opens at `http://localhost:5173`. Proxies `/api` → `http://127.0.0.1:8083` (gateway).
 
-## Running Locally (without Docker)
+## API Gateway Routes
 
-For individual service development, you need local PostgreSQL and Kafka.
+| Path | Target Service | Method |
+|------|---------------|--------|
+| `/api/auth/**` | auth-service:4005 (strip 2) | Login, register, admin CRUD |
+| `/api/patients/**` | patient-service:4000 | Patient CRUD |
+| `/api/doctors/**` | appointment-service:4006 | Doctor CRUD |
+| `/api/appointments/**` | appointment-service:4006 | Appointment CRUD |
+| `/api/consultations/**` | appointment-service:4006 | Consultation management |
+| `/api/images/**` | imaging-service:4007 | Medical image upload/view |
 
-### Start databases
+## Roles & Access
 
-```bash
-# Patient DB
-docker run -d --name springboot-postgres \
-  -e POSTGRES_PASSWORD=mypassword \
-  -e POSTGRES_USER=myuser \
-  -e POSTGRES_DB=patient_management \
-  -p 5000:5432 postgres:latest
+| Role | Permissions |
+|------|------------|
+| SUPER_ADMIN | Full access, admin management |
+| ADMIN | Patient/doctor/appointment/staff management |
+| DOCTOR | Appointment scheduling, consultations | 
+| STAFF | Patient registration, appointment booking |
+| PATIENT | Own appointments, medical records |
 
-# Auth DB
-docker run -d --name auth-db \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_USER=user \
-  -e POSTGRES_DB=patient_management \
-  -p 5002:5432 postgres:latest
-```
+## Test Credentials
 
-### Start Kafka locally
+| Email | Password | Role |
+|-------|----------|------|
+| chamuditha@hospital.com | Admin@123 | SUPER_ADMIN |
+| sanduni@hospital.com | Admin@123 | ADMIN |
+| kasuni@hospital.com | Staff@123 | STAFF |
 
-```bash
-docker compose -f kafka-docker/docker-compose.yml up -d
-```
+## AWS Deployment
 
-### Run services
+Infrastructure in `ap-southeast-1` (Singapore):
 
-Each service requires a terminal:
+| Resource | Name | Purpose |
+|----------|------|---------|
+| EC2 | `pm-system` (c7i-flex.large) | Docker host for all backend services |
+| RDS | `pm-postgres` (db.t3.micro) | Single PostgreSQL database |
+| S3 | `hospital-frontend-dev-2026` | Static React hosting |
+| ALB | `pm-alb-2089108845` | Load balancer for API traffic |
 
-```bash
-# 1. billing-service (gRPC + HTTP)
-cd billing-service && mvn spring-boot:run
+### Deploy
 
-# 2. patient-service (REST + gRPC client + Kafka producer)
-cd patient-service && mvn spring-boot:run
+Push to `main` branch triggers GitHub Actions pipeline:
 
-# 3. analytics-service (Kafka consumer)
-cd analytics-service && mvn spring-boot:run
+1. **build-backend** — 7 parallel Maven builds
+2. **docker-build** — 8 parallel Docker builds & push to Docker Hub
+3. **build-frontend** — npm build with production API URL
+4. **deploy-frontend** — Sync to S3, invalidate CloudFront
+5. **deploy-backend** — SSH into EC2, `docker compose pull && up`
 
-# 4. auth-service (JWT login)
-cd auth-service && mvn spring-boot:run
+### Frontend URL
 
-# 5. api-getway (routes /api/patients/**)
-cd api-getway && mvn spring-boot:run
-```
-
-> For local runs, update `application.properties` DB URLs to `localhost:<port>` and Kafka to `localhost:9092` as needed.
-
-## Service Details
-
-### patient-service (port 4000)
-- `GET /patients` — list all
-- `GET /patients/{id}` — get by ID
-- `POST /patients` — create (triggers gRPC billing + Kafka event)
-- `PUT /patients/{id}` — update
-- `DELETE /patients/{id}` — delete
-
-### auth-service (port 4005)
-- `POST /login` — authenticate, returns JWT
-- Role enum: `ADMIN`, `PATIENT`, `DOCTOR`
-
-### api-getway (port 4004)
-Routes `/api/patients/**` → `patient-service:4000/patients`
-
-### billing-service (port 4001, gRPC 9001)
-- gRPC `CreateBillingAccount` (hardcoded response)
-
-### analytics-service (port 4002)
-- Kafka consumer on topic `patient` (logs events)
+`http://hospital-frontend-dev-2026.s3-website-ap-southeast-1.amazonaws.com`
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| `network internal-net not found` | Run `docker network create internal-net` |
-| Kafka connection refused | Wait 15s after starting Kafka, or check logs |
-| DB connection refused | Services start before DB is ready — wait 30s and retry |
+| `network internal-net not found` | `docker network create internal-net` |
+| Kafka connection refused | Wait 15s after starting Kafka |
+| DB connection refused | Wait 30s for PostgreSQL init |
+| Empty appointments/patients on dashboard | Logged in as SUPER_ADMIN? Old bug — now fixed |
+| CORS errors | Check API Gateway allows wildcard origin |
 | Port conflict | Change `ports:` in `docker-compose.yml` |
-| Frontend can't reach API | Update `vite.config.js` with proxy to `http://localhost:4004` |
 
 ## Project Structure
 
 ```
 patient-managment/
-├── patient-service/       # REST API, gRPC client, Kafka producer
-├── billing-service/       # gRPC server only
-├── analytics-service/     # Kafka consumer
-├── auth-service/          # JWT authentication
-├── api-getway/            # Spring Cloud Gateway
-├── frontend/              # React + Vite
-├── kafka-docker/          # Kafka docker-compose
-└── docs/                  # Architecture diagrams
+├── auth-service/              # JWT auth (login, register, admin/staff CRUD)
+├── patient-service/           # Patient CRUD, gRPC client, Kafka producer
+├── appoinment-service-main/   # Appointments, doctors, consultations
+├── imaging-service/           # Medical image upload/store
+├── billing-service/           # gRPC mock server
+├── analytics-service/         # Kafka consumer (logs events)
+├── api-getway/                # Spring Cloud Gateway (port 4004)
+├── frontend/                  # React 19 + Vite + Ant Design 6
+│   └── src/
+│       ├── api/               # API client modules
+│       ├── pages/             # Route pages (Dashboard, Analytics, etc.)
+│       ├── components/        # Layout, shared components
+│       ├── context/           # AuthContext, role-based guards
+│       └── types/             # TypeScript interfaces
+├── docs/                      # SRS, architecture diagrams, task lists
+├── .github/workflows/         # CI/CD pipeline
+├── docker-compose.yml         # All service definitions
+└── Postman_Collection.json    # 43 API requests with auto-auth
 ```

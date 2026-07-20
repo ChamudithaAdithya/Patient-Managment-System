@@ -8,6 +8,7 @@ import {
   ScheduleOutlined,
   SafetyOutlined,
   TeamOutlined,
+  BarChartOutlined,
   LogoutOutlined,
 } from '@ant-design/icons'
 import { useAuth } from '../../hooks/useAuth'
@@ -23,6 +24,7 @@ const menuItems = [
   { key: '/doctors/schedule', icon: <ScheduleOutlined />, label: 'Schedule', roles: ['SUPER_ADMIN', 'ADMIN', 'DOCTOR', 'STAFF'] },
   { key: '/admin/users', icon: <SafetyOutlined />, label: 'Admin Mgmt', roles: ['SUPER_ADMIN'] },
   { key: '/admin/staff', icon: <TeamOutlined />, label: 'Staff', roles: ['SUPER_ADMIN', 'ADMIN'] },
+  { key: '/analytics', icon: <BarChartOutlined />, label: 'Analytics', roles: ['SUPER_ADMIN', 'ADMIN', 'DOCTOR', 'STAFF'] },
 ]
 
 function getSelectedKey(pathname: string) {
@@ -32,6 +34,7 @@ function getSelectedKey(pathname: string) {
   if (pathname.startsWith('/patients')) return '/patients'
   if (pathname.startsWith('/admin/users')) return '/admin/users'
   if (pathname.startsWith('/admin/staff')) return '/admin/staff'
+  if (pathname.startsWith('/analytics')) return '/analytics'
   return '/dashboard'
 }
 

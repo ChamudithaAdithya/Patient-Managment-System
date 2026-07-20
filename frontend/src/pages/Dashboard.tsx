@@ -33,7 +33,7 @@ export default function Dashboard() {
   useEffect(() => {
     const promises: Promise<unknown>[] = [getDoctors()]
 
-    if (hasRole('ADMIN', 'DOCTOR')) {
+    if (hasRole('SUPER_ADMIN', 'ADMIN', 'DOCTOR', 'STAFF')) {
       promises.push(getPatients(), getAppointments())
     }
 
@@ -75,7 +75,7 @@ export default function Dashboard() {
   const completed = appointments.filter((a) => a.status === 'COMPLETED').length
   const cancelled = appointments.filter((a) => a.status === 'CANCELLED').length
 
-  const isAdminOrDoctor = hasRole('ADMIN', 'DOCTOR')
+  const isAdminOrDoctor = hasRole('SUPER_ADMIN', 'ADMIN', 'DOCTOR', 'STAFF')
 
   return (
     <div>
